@@ -123,6 +123,7 @@ def report_pdf():
             ["إجمالي العمولات", "-", "-", "-", f"{breakdown['commission_total']:.2f}"],
             ["إجمالي المصروف الإداري", "-", "-", "-", f"{breakdown['admin_fees_total']:.2f}"],
             ["إجمالي تكلفة البضاعة", "-", "-", "-", f"{breakdown['supplier_cost_total']:.2f}"],
+            ["عدد عمليات البيع", "-", "-", "-", str(breakdown["sales_count"])],
             ["إجمالي الديون المحصلة", "-", "-", "-", f"{breakdown['debt_paid_total']:.2f}"],
             ["إجمالي المصروفات الأخرى", "-", "-", "-", f"{breakdown['other_expenses_total']:.2f}"],
             ["إجمالي الديون المسجلة", "-", "-", "-", f"{breakdown['debt_total']:.2f}"],

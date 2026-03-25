@@ -28,6 +28,7 @@ special_retailer_bp = Blueprint(
 @special_retailer_bp.route("/", methods=["GET", "POST"])
 def special_retailers():
     db_session = get_session()
+    settings = get_or_create_settings(db_session)
 
     if request.method == "POST":
         retailer_id = parse_int(request.form.get("retailer_id"))
@@ -66,14 +67,16 @@ def special_retailers():
             flash("الخصم للوحدة لا يمكن أن يكون أكبر من سعر الوحدة القادم من المخزون.", "error")
             return redirect(url_for("special_retailers.special_retailers"))
 
-        original_price, price_per_unit, total_price, _ = calculate_sale_totals(
+        original_price, price_per_unit, subtotal_price, final_total_price = calculate_sale_totals(
             units_count,
             quote["supplier_total_price"],
             discount_per_unit,
+            settings.commission_per_unit,
+            settings.admin_expense,
         )
 
         existing_paid = payment_total_for_retailer(db_session, retailer_id) if retailer_id else 0.0
-        if total_price < existing_paid:
+        if final_total_price < existing_paid:
             db_session.rollback()
             flash("إجمالي الفاتورة الجديدة أقل من المدفوع فعلاً.", "error")
             return redirect(url_for("special_retailers.special_retailers"))
@@ -86,7 +89,9 @@ def special_retailers():
         retailer.original_price_per_unit = original_price
         retailer.discount_per_unit = discount_per_unit
         retailer.price_per_unit = price_per_unit
-        retailer.total_price = total_price
+        retailer.commission_per_unit = settings.commission_per_unit
+        retailer.admin_expense = settings.admin_expense
+        retailer.total_price = final_total_price
         retailer.total_paid = existing_paid
         retailer.notes = request.form.get("notes", "").strip() or None
         update_special_retailer_status(retailer)
@@ -126,6 +131,8 @@ def special_retailers():
         "page_title": "تجار الآجل",
         "retailers": retailers,
         "edit_retailer": edit_retailer,
+        "default_commission": settings.commission_per_unit,
+        "default_admin_expense": settings.admin_expense,
     }
     return render_template("special_retailers.html", **context)
 
@@ -165,6 +172,8 @@ def special_retailer_receipt(retailer_id: int):
             *[f"الهاتف: {phone}" for phone in split_phone_numbers(settings.phone_number)],
             f"التاجر: {retailer.retailer_name}",
             f"التاريخ: {retailer.date.strftime('%Y-%m-%d %H:%M')}",
+            f"العمولة للوحدة: {retailer.commission_per_unit:.2f} ج.م",
+            f"المصروف الإداري: {retailer.admin_expense:.2f} ج.م",
         ],
         "table_headers": ["الصنف", "الدرجة", "الوحدات", "سعر الوحدة", "القيمة"],
         "table_rows": [[
@@ -175,6 +184,8 @@ def special_retailer_receipt(retailer_id: int):
             f"{retailer.total_price:.2f}",
         ]],
         "summary_lines": [
+            ("العمولة للوحدة", retailer.commission_per_unit),
+            ("المصروف الإداري", retailer.admin_expense),
             ("المدفوع", retailer.total_paid),
             ("المتبقي", retailer.remaining_balance),
             ("الحالة", "مدفوع" if retailer.status == "paid" else ("مدفوع جزئياً" if retailer.status == "partial" else "غير مدفوع")),
@@ -224,6 +235,8 @@ def special_retailer_receipt_pdf(retailer_id: int):
             *[f"الهاتف: {phone}" for phone in split_phone_numbers(settings.phone_number)],
             f"التاجر: {retailer.retailer_name}",
             f"التاريخ: {retailer.date.strftime('%Y-%m-%d %H:%M')}",
+            f"العمولة للوحدة: {retailer.commission_per_unit:.2f}",
+            f"المصروف الإداري: {retailer.admin_expense:.2f}",
         ],
         ["الصنف", "الحالة", "الوحدات", "سعر الوحدة", "القيمة"],
         rows,

@@ -13,46 +13,77 @@
     </div>
 </section>
 
-<section class="kpi-grid">
-    <article class="kpi-card">
-        <span>إجمالي الإيراد</span>
-        <strong>{{ breakdown.total_revenue|currency }}</strong>
-    </article>
-    <article class="kpi-card">
-        <span>صافي الإيراد</span>
-        <strong>{{ breakdown.net_revenue|currency }}</strong>
-    </article>
-    <article class="kpi-card">
-        <span>الإيراد الحالي</span>
-        <strong>{{ breakdown.current_revenue|currency }}</strong>
-    </article>
-    <article class="kpi-card">
-        <span>إجمالي الديون</span>
-        <strong>{{ breakdown.debt_total|currency }}</strong>
-    </article>
+<section class="panel">
+    <div class="panel-head">
+        <div>
+            <h3>ملخص الإيراد</h3>
+            <p>المؤشرات الأساسية المرتبطة بحركة البيع والتحصيل.</p>
+        </div>
+    </div>
+    <div class="kpi-grid report-kpi-grid">
+        <article class="kpi-card">
+            <span>إجمالي الإيراد</span>
+            <strong>{{ breakdown.total_revenue|currency }}</strong>
+        </article>
+        <article class="kpi-card">
+            <span>صافي الإيراد</span>
+            <strong>{{ breakdown.net_revenue|currency }}</strong>
+        </article>
+        <article class="kpi-card">
+            <span>الإيراد الحالي</span>
+            <strong>{{ breakdown.current_revenue|currency }}</strong>
+        </article>
+        <article class="kpi-card">
+            <span>عدد عمليات البيع</span>
+            <strong>{{ breakdown.sales_count }}</strong>
+        </article>
+    </div>
 </section>
 
-<section class="kpi-grid reports-kpis">
-    <article class="kpi-card">
-        <span>إجمالي العمولات</span>
-        <strong>{{ breakdown.commission_total|currency }}</strong>
-    </article>
-    <article class="kpi-card">
-        <span>المصروف الإداري</span>
-        <strong>{{ breakdown.admin_fees_total|currency }}</strong>
-    </article>
-    <article class="kpi-card">
-        <span>تكلفة البضاعة المباعة</span>
-        <strong>{{ breakdown.supplier_cost_total|currency }}</strong>
-    </article>
-    <article class="kpi-card">
-        <span>الديون المحصلة</span>
-        <strong>{{ breakdown.debt_paid_total|currency }}</strong>
-    </article>
-    <article class="kpi-card">
-        <span>المصروفات الأخرى</span>
-        <strong>{{ breakdown.other_expenses_total|currency }}</strong>
-    </article>
+<section class="panel">
+    <div class="panel-head">
+        <div>
+            <h3>الديون والمصروفات</h3>
+            <p>متابعة ما تم بيعه آجلاً وما تم تحصيله وما خرج كمصروفات.</p>
+        </div>
+    </div>
+    <div class="kpi-grid report-kpi-grid">
+        <article class="kpi-card">
+            <span>إجمالي الديون</span>
+            <strong>{{ breakdown.debt_total|currency }}</strong>
+        </article>
+        <article class="kpi-card">
+            <span>الديون المحصلة</span>
+            <strong>{{ breakdown.debt_paid_total|currency }}</strong>
+        </article>
+        <article class="kpi-card">
+            <span>المصروفات الأخرى</span>
+            <strong>{{ breakdown.other_expenses_total|currency }}</strong>
+        </article>
+    </div>
+</section>
+
+<section class="panel">
+    <div class="panel-head">
+        <div>
+            <h3>مكونات الربحية</h3>
+            <p>تفصيل العمولات والمصروف الإداري وتكلفة البضاعة.</p>
+        </div>
+    </div>
+    <div class="kpi-grid report-kpi-grid">
+        <article class="kpi-card">
+            <span>إجمالي العمولات</span>
+            <strong>{{ breakdown.commission_total|currency }}</strong>
+        </article>
+        <article class="kpi-card">
+            <span>المصروف الإداري</span>
+            <strong>{{ breakdown.admin_fees_total|currency }}</strong>
+        </article>
+        <article class="kpi-card">
+            <span>تكلفة البضاعة المباعة</span>
+            <strong>{{ breakdown.supplier_cost_total|currency }}</strong>
+        </article>
+    </div>
 </section>
 
 <section class="content-grid single-wide">

@@ -40,14 +40,20 @@
                 <span>الخصم للوحدة</span>
                 <input type="number" min="0" step="0.01" name="discount_per_unit" value="{{ edit_transaction.discount_per_unit if edit_transaction else 0 }}" required>
             </label>
-            <label>
-                <span>العمولة للوحدة</span>
-                <input type="number" min="0" step="0.01" name="commission_per_unit" value="{{ edit_transaction.commission_per_unit if edit_transaction else default_commission }}" {% if not is_admin %}readonly{% endif %} required>
-            </label>
-            <label>
-                <span>المصروف الإداري</span>
-                <input type="number" min="0" step="0.01" name="admin_expense" value="{{ edit_transaction.admin_expense if edit_transaction else default_admin_expense }}" {% if not is_admin %}readonly{% endif %} required>
-            </label>
+            {% if is_admin %}
+                <label>
+                    <span>العمولة للوحدة</span>
+                    <input type="number" min="0" step="0.01" name="commission_per_unit" value="{{ edit_transaction.commission_per_unit if edit_transaction else default_commission }}" required>
+                </label>
+                <label>
+                    <span>المصروف الإداري</span>
+                    <input type="number" min="0" step="0.01" name="admin_expense" value="{{ edit_transaction.admin_expense if edit_transaction else default_admin_expense }}" required>
+                </label>
+            {% else %}
+                <div class="info-box">
+                    العمولة والمصروف الإداري يطبقان تلقائياً من إعدادات النظام ولا يمكن للمستخدم العادي تعديلهما.
+                </div>
+            {% endif %}
             <label class="full-width">
                 <span>ملاحظات</span>
                 <textarea name="notes" rows="3">{{ edit_transaction.notes if edit_transaction else '' }}</textarea>

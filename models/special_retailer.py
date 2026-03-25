@@ -18,6 +18,8 @@ class SpecialRetailer(Base):
     original_price_per_unit: Mapped[float] = mapped_column(Float, nullable=False)
     discount_per_unit: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
     price_per_unit: Mapped[float] = mapped_column(Float, nullable=False)
+    commission_per_unit: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
+    admin_expense: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
     total_price: Mapped[float] = mapped_column(Float, nullable=False)
     total_paid: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
     remaining_balance: Mapped[float] = mapped_column(Float, nullable=False)

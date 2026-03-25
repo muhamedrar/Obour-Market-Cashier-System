@@ -318,7 +318,7 @@ def supplier_cost_total(db_session) -> float:
 
 
 def revenue_breakdown(db_session):
-    commission_total = db_session.scalar(
+    retail_commission_total = db_session.scalar(
         select(
             func.coalesce(
                 func.sum(RetailTransaction.commission_per_unit * RetailTransaction.units_count),
@@ -326,9 +326,23 @@ def revenue_breakdown(db_session):
             )
         )
     ) or 0
-    admin_fees_total = db_session.scalar(
+    debt_commission_total = db_session.scalar(
+        select(
+            func.coalesce(
+                func.sum(SpecialRetailer.commission_per_unit * SpecialRetailer.units_count),
+                0,
+            )
+        )
+    ) or 0
+    commission_total = float(retail_commission_total) + float(debt_commission_total)
+
+    retail_admin_total = db_session.scalar(
         select(func.coalesce(func.sum(RetailTransaction.admin_expense), 0))
     ) or 0
+    debt_admin_total = db_session.scalar(
+        select(func.coalesce(func.sum(SpecialRetailer.admin_expense), 0))
+    ) or 0
+    admin_fees_total = float(retail_admin_total) + float(debt_admin_total)
     other_expenses_total = db_session.scalar(
         select(func.coalesce(func.sum(Expense.amount), 0))
     ) or 0
@@ -337,6 +351,11 @@ def revenue_breakdown(db_session):
     ) or 0
     supplier_costs = supplier_cost_total(db_session)
     debt_paid_total = received_payments_total(db_session)
+    sales_count = (
+        db_session.scalar(select(func.count(RetailTransaction.id))) or 0
+    ) + (
+        db_session.scalar(select(func.count(SpecialRetailer.id))) or 0
+    )
 
     total_revenue = round(
         float(commission_total) + float(admin_fees_total) + supplier_costs + float(debt_total),
@@ -355,6 +374,7 @@ def revenue_breakdown(db_session):
         "other_expenses_total": round(float(other_expenses_total), 2),
         "debt_total": round(float(debt_total), 2),
         "debt_paid_total": debt_paid_total,
+        "sales_count": int(sales_count),
         "net_revenue": net_revenue,
         "current_revenue": current_revenue,
         "total_revenue": total_revenue,

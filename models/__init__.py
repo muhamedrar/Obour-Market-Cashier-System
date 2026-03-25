@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, inspect
 from sqlalchemy.orm import DeclarativeBase, scoped_session, sessionmaker
 
 
@@ -10,6 +10,33 @@ SessionLocal = scoped_session(
     sessionmaker(autoflush=False, autocommit=False, expire_on_commit=False)
 )
 engine = None
+
+
+def ensure_sqlite_columns():
+    if engine is None or engine.dialect.name != "sqlite":
+        return
+
+    inspector = inspect(engine)
+    if "special_retailers" not in inspector.get_table_names():
+        return
+
+    columns = {column["name"] for column in inspector.get_columns("special_retailers")}
+    statements = []
+    if "commission_per_unit" not in columns:
+        statements.append(
+            "ALTER TABLE special_retailers ADD COLUMN commission_per_unit FLOAT NOT NULL DEFAULT 0"
+        )
+    if "admin_expense" not in columns:
+        statements.append(
+            "ALTER TABLE special_retailers ADD COLUMN admin_expense FLOAT NOT NULL DEFAULT 0"
+        )
+
+    if not statements:
+        return
+
+    with engine.begin() as connection:
+        for statement in statements:
+            connection.exec_driver_sql(statement)
 
 
 def init_app(app):
@@ -29,6 +56,7 @@ def init_app(app):
     from models.supplier import Supplier
 
     Base.metadata.create_all(bind=engine)
+    ensure_sqlite_columns()
 
     @app.teardown_appcontext
     def shutdown_session(exception=None):

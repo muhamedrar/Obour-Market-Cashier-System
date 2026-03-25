@@ -16,6 +16,8 @@
         <form class="form-grid" method="post" data-sale-form="special">
             <input type="hidden" name="retailer_id" value="{{ edit_retailer.id if edit_retailer else '' }}">
             <input type="hidden" name="original_price_per_unit" value="{{ edit_retailer.original_price_per_unit if edit_retailer else '' }}" data-sale-field="price">
+            <input type="hidden" name="commission_per_unit" value="{{ edit_retailer.commission_per_unit if edit_retailer else default_commission }}">
+            <input type="hidden" name="admin_expense" value="{{ edit_retailer.admin_expense if edit_retailer else default_admin_expense }}">
             <label>
                 <span>التاريخ</span>
                 <input type="datetime-local" name="date" value="{{ edit_retailer.date|datetime_input if edit_retailer else now_string }}" required>
@@ -44,6 +46,9 @@
                 <span>الخصم للوحدة</span>
                 <input type="number" min="0" step="0.01" name="discount_per_unit" value="{{ edit_retailer.discount_per_unit if edit_retailer else 0 }}" required>
             </label>
+            <div class="info-box">
+                تجار الآجل تُضاف عليهم العمولة والمصروف الإداري تلقائياً من إعدادات النظام.
+            </div>
             <label class="full-width">
                 <span>ملاحظات</span>
                 <textarea name="notes" rows="3">{{ edit_retailer.notes if edit_retailer else '' }}</textarea>
