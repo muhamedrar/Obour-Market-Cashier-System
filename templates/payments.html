@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="content-grid">
+    <article class="panel form-panel">
+        <div class="panel-head">
+            <div>
+                <h3>{{ "تعديل دفعة" if edit_payment else "إضافة دفعة" }}</h3>
+                <p>لا يمكن تسجيل دفعة تتجاوز الرصيد المتبقي على التاجر.</p>
+            </div>
+        </div>
+        <form class="form-grid" method="post">
+            <input type="hidden" name="payment_id" value="{{ edit_payment.id if edit_payment else '' }}">
+            <label class="full-width">
+                <span>اختر التاجر</span>
+                <select name="retailer_id" required>
+                    <option value="">اختر التاجر</option>
+                    {% for retailer in retailers %}
+                        {% set selected_id = edit_payment.retailer_id if edit_payment else (selected_retailer.id if selected_retailer else 0) %}
+                        <option value="{{ retailer.id }}" {% if selected_id == retailer.id %}selected{% endif %}>
+                            {{ retailer.retailer_name }} | متبقي {{ retailer.remaining_balance|currency }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </label>
+            {% if edit_payment %}
+                <div class="info-box full-width">
+                    عند تعديل دفعة موجودة يتم الإبقاء على نفس التاجر. إذا أردت نقل الدفعة لتاجر آخر احذفها ثم أعد إدخالها.
+                </div>
+            {% endif %}
+            <label>
+                <span>تاريخ الدفعة</span>
+                <input type="datetime-local" name="payment_date" value="{{ edit_payment.payment_date|datetime_input if edit_payment else now_string }}" required>
+            </label>
+            <label>
+                <span>قيمة الدفعة</span>
+                <input type="number" min="0.01" step="0.01" name="amount_paid" value="{{ edit_payment.amount_paid if edit_payment else '' }}" required>
+            </label>
+            <label class="full-width">
+                <span>ملاحظات</span>
+                <textarea name="notes" rows="3">{{ edit_payment.notes if edit_payment else '' }}</textarea>
+            </label>
+            <div class="form-actions full-width">
+                <button class="btn btn-primary" type="submit">{{ "حفظ التعديل" if edit_payment else "حفظ الدفعة" }}</button>
+                {% if edit_payment %}
+                    <a class="btn btn-ghost" href="{{ url_for('payments.payments') }}">إلغاء</a>
+                {% endif %}
+            </div>
+        </form>
+    </article>
+
+    <article class="panel">
+        <div class="panel-head">
+            <div>
+                <h3>التجار والأرصدة الحالية</h3>
+                <p>اضغط على أي تاجر لفتح صفحة الدفعات الخاصة به مباشرة.</p>
+            </div>
+        </div>
+        <div class="mini-list">
+            {% for retailer in retailers %}
+                <a class="mini-item" href="{{ url_for('payments.payments', retailer=retailer.id) }}">
+                    <strong>{{ retailer.retailer_name }}</strong>
+                    <span>
+                        {{ "مدفوع" if retailer.status == "paid" else ("مدفوع جزئياً" if retailer.status == "partial" else "غير مدفوع") }}
+                        | المتبقي {{ retailer.remaining_balance|currency }}
+                    </span>
+                </a>
+            {% else %}
+                <div class="empty-state">لا يوجد تجار آجل حتى الآن.</div>
+            {% endfor %}
+        </div>
+    </article>
+
+    <article class="panel full-span">
+        <div class="panel-head">
+            <div>
+                <h3>سجل الدفعات</h3>
+                <p>يتم تحديث إجمالي المدفوع والرصيد المتبقي فوراً بعد كل دفعة.</p>
+            </div>
+        </div>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>التاريخ</th>
+                        <th>التاجر</th>
+                        <th>الدفعة</th>
+                        <th>ملاحظات</th>
+                        <th>إجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for payment in payments_list %}
+                        <tr>
+                            <td>{{ payment.payment_date|date_ar }}</td>
+                            <td>{{ payment.retailer.retailer_name }}</td>
+                            <td>{{ payment.amount_paid|currency }}</td>
+                            <td>{{ payment.notes or "-" }}</td>
+                            <td class="actions-cell">
+                                {% if is_admin %}
+                                    <a class="btn btn-small btn-ghost" href="{{ url_for('payments.payments', edit=payment.id) }}">تعديل</a>
+                                    <form method="post" action="{{ url_for('payments.delete_payment', payment_id=payment.id) }}">
+                                        <button class="btn btn-small btn-danger" type="submit" data-confirm="هل تريد حذف الدفعة؟">حذف</button>
+                                    </form>
+                                {% else %}
+                                    <span class="muted">للمسؤول فقط</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr><td colspan="5" class="empty-state">لا توجد دفعات مسجلة.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </article>
+</section>
+{% endblock %}

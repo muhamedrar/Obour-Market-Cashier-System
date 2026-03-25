@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="hero-panel">
+    <div>
+        <span class="eyebrow">نظرة سريعة على اليوم</span>
+        <h3>تحكم في المخزون والمبيعات من شاشة واحدة</h3>
+        <p>المؤشرات التالية محدثة مباشرة من الحركات اليومية والمصروفات والديون.</p>
+    </div>
+    <a class="btn btn-primary" href="{{ url_for('admin.reports') }}">فتح التقارير</a>
+</section>
+
+<section class="kpi-grid">
+    <article class="kpi-card">
+        <span>الموردون النشطون</span>
+        <strong>{{ metrics.active_suppliers }}</strong>
+    </article>
+    <article class="kpi-card">
+        <span>إجمالي الإيراد</span>
+        <strong>{{ metrics.total_revenue|currency }}</strong>
+    </article>
+    <article class="kpi-card">
+        <span>صافي الإيراد</span>
+        <strong>{{ metrics.net_revenue|currency }}</strong>
+    </article>
+    <article class="kpi-card">
+        <span>الإيراد الحالي</span>
+        <strong>{{ metrics.current_revenue|currency }}</strong>
+    </article>
+    <article class="kpi-card">
+        <span>إجمالي الديون القائمة</span>
+        <strong>{{ metrics.outstanding_debt|currency }}</strong>
+    </article>
+</section>
+
+<section class="content-grid">
+    <article class="panel">
+        <div class="panel-head">
+            <div>
+                <h3>ملخص المخزون الحالي</h3>
+                <p>يمكنك التصفية حسب الصنف لمعرفة المتبقي بشكل أسرع.</p>
+            </div>
+            <form class="inline-form" method="get">
+                <select name="fruit">
+                    <option value="">كل الأصناف</option>
+                    {% for fruit in fruit_options %}
+                        <option value="{{ fruit }}" {% if selected_fruit == fruit %}selected{% endif %}>{{ fruit }}</option>
+                    {% endfor %}
+                </select>
+                <button class="btn btn-secondary" type="submit">تصفية</button>
+            </form>
+        </div>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>الصنف</th>
+                        <th>الدرجة</th>
+                        <th>الوحدات المتبقية</th>
+                        <th>متوسط السعر</th>
+                        <th>القيمة الإجمالية</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in inventory_rows %}
+                        <tr>
+                            <td>{{ row.fruit_name }}</td>
+                            <td>{{ row.class_number }}</td>
+                            <td>{{ row.remaining_units }}</td>
+                            <td>{{ row.avg_price|currency }}</td>
+                            <td>{{ row.total_value|currency }}</td>
+                        </tr>
+                    {% else %}
+                        <tr><td colspan="5" class="empty-state">لا يوجد مخزون مطابق حالياً.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </article>
+
+    <article class="panel">
+        <div class="panel-head">
+            <div>
+                <h3>آخر مبيعات النقدي</h3>
+                <p>آخر خمس حركات لسهولة المتابعة السريعة.</p>
+            </div>
+            <a class="btn btn-secondary" href="{{ url_for('retail.retail') }}">كل المبيعات</a>
+        </div>
+        <div class="mini-list">
+            {% for item in recent_retail %}
+                <a class="mini-item" href="{{ url_for('retail.retail_receipt', transaction_id=item.id) }}">
+                    <strong>{{ item.fruit_name }} - درجة {{ item.class_number }}</strong>
+                    <span>{{ item.units_count }} وحدة | {{ item.final_price|currency }} | {{ item.date|date_ar }}</span>
+                </a>
+            {% else %}
+                <div class="empty-state">لا توجد مبيعات نقدية بعد.</div>
+            {% endfor %}
+        </div>
+    </article>
+
+    <article class="panel">
+        <div class="panel-head">
+            <div>
+                <h3>آخر حركات الآجل</h3>
+                <p>متابعة سريعة للتجار وأرصدتهم الحالية.</p>
+            </div>
+            <a class="btn btn-secondary" href="{{ url_for('special_retailers.special_retailers') }}">كل الديون</a>
+        </div>
+        <div class="mini-list">
+            {% for item in recent_debt %}
+                <a class="mini-item" href="{{ url_for('payments.payments', retailer=item.id) }}">
+                    <strong>{{ item.retailer_name }}</strong>
+                    <span>{{ item.fruit_name }} | المتبقي {{ item.remaining_balance|currency }} | {{ item.date|date_ar }}</span>
+                </a>
+            {% else %}
+                <div class="empty-state">لا توجد حركات آجل بعد.</div>
+            {% endfor %}
+        </div>
+    </article>
+</section>
+{% endblock %}

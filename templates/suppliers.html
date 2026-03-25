@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="content-grid single-wide">
+    <article class="panel form-panel">
+        <div class="panel-head">
+            <div>
+                <h3>{{ "تعديل مورد" if edit_supplier else "إضافة مورد جديد" }}</h3>
+                <p>المخزون يتم تحديثه تلقائياً عند البيع ولا يمكن أن يصبح سالباً.</p>
+            </div>
+        </div>
+        <form class="form-grid" method="post">
+            <input type="hidden" name="supplier_id" value="{{ edit_supplier.id if edit_supplier else '' }}">
+            <label>
+                <span>التاريخ</span>
+                <input type="datetime-local" name="date" value="{{ edit_supplier.date|datetime_input if edit_supplier else now_string }}" required>
+            </label>
+            <label>
+                <span>اسم المورد</span>
+                <input type="text" name="supplier_name" value="{{ edit_supplier.supplier_name if edit_supplier else '' }}" required>
+            </label>
+            <label>
+                <span>اسم الصنف</span>
+                <input type="text" name="fruit_name" value="{{ edit_supplier.fruit_name if edit_supplier else '' }}" required>
+            </label>
+            <label>
+                <span>الدرجة</span>
+                <input type="text" name="class_number" value="{{ edit_supplier.class_number if edit_supplier else '' }}" required>
+            </label>
+            <label>
+                <span>عدد الوحدات</span>
+                <input type="number" min="1" name="units_count" value="{{ edit_supplier.units_count if edit_supplier else '' }}" required>
+            </label>
+            <label>
+                <span>سعر الوحدة</span>
+                <input type="number" min="0" step="0.01" name="price_per_unit" value="{{ edit_supplier.price_per_unit if edit_supplier else '' }}" required>
+            </label>
+            <label class="full-width">
+                <span>ملاحظات</span>
+                <textarea name="notes" rows="3">{{ edit_supplier.notes if edit_supplier else '' }}</textarea>
+            </label>
+            <div class="form-actions full-width">
+                <button class="btn btn-primary" type="submit">{{ "حفظ التعديل" if edit_supplier else "إضافة المورد" }}</button>
+                {% if edit_supplier %}
+                    <a class="btn btn-ghost" href="{{ url_for('suppliers.suppliers') }}">إلغاء</a>
+                {% endif %}
+            </div>
+        </form>
+    </article>
+
+    <article class="panel">
+        <div class="panel-head">
+            <div>
+                <h3>سجل الموردين</h3>
+                <p>يعرض الكميات الأصلية والمتبقية وحالة التصفية لكل مورد.</p>
+            </div>
+            <form class="inline-form" method="get">
+                <input type="search" name="q" value="{{ search_query }}" placeholder="ابحث بالمورد أو الصنف أو الدرجة">
+                <button class="btn btn-secondary" type="submit">بحث</button>
+                {% if search_query %}
+                    <a class="btn btn-ghost" href="{{ url_for('suppliers.suppliers') }}">مسح</a>
+                {% endif %}
+            </form>
+        </div>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>التاريخ</th>
+                        <th>المورد</th>
+                        <th>الصنف</th>
+                        <th>الدرجة</th>
+                        <th>الكمية</th>
+                        <th>المتبقي</th>
+                        <th>الإجمالي</th>
+                        <th>الحالة</th>
+                        <th>إجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for supplier in suppliers_list %}
+                        <tr>
+                            <td>{{ supplier.date|date_ar }}</td>
+                            <td>{{ supplier.supplier_name }}</td>
+                            <td>{{ supplier.fruit_name }}</td>
+                            <td>{{ supplier.class_number }}</td>
+                            <td>{{ supplier.units_count }}</td>
+                            <td>{{ supplier.remaining_units }}</td>
+                            <td>{{ supplier.total_price|currency }}</td>
+                            <td>
+                                <span class="status {{ 'paid' if supplier.is_cleared else 'partial' }}">
+                                    {{ "تمت التصفية" if supplier.is_cleared else "نشط" }}
+                                </span>
+                            </td>
+                            <td class="actions-cell">
+                                <a class="btn btn-small btn-secondary" href="{{ url_for('suppliers.suppliers', edit=supplier.id) }}">تعديل</a>
+                                {% if is_admin %}
+                                    <form method="post" action="{{ url_for('suppliers.delete_supplier', supplier_id=supplier.id) }}">
+                                        <button class="btn btn-small btn-danger" type="submit" data-confirm="هل تريد حذف المورد؟">حذف</button>
+                                    </form>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr><td colspan="9" class="empty-state">لا توجد نتائج مطابقة حالياً.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </article>
+</section>
+{% endblock %}

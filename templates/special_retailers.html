@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="content-grid single-wide">
+    <article class="panel form-panel">
+        <div class="panel-head">
+            <div>
+                <h3>{{ "تعديل تاجر آجل" if edit_retailer else "إضافة تاجر آجل" }}</h3>
+                <p>يتم حفظ الرصيد المتبقي والحالة تلقائياً مع دعم السداد على دفعات.</p>
+            </div>
+            <div class="preview-strip" data-sale-preview>
+                <span>سعر البيع للوحدة: <strong data-preview="unit_price">0.00</strong></span>
+                <span>إجمالي الفاتورة: <strong data-preview="final_price">0.00</strong></span>
+            </div>
+        </div>
+        <form class="form-grid" method="post" data-sale-form="special">
+            <input type="hidden" name="retailer_id" value="{{ edit_retailer.id if edit_retailer else '' }}">
+            <label>
+                <span>التاريخ</span>
+                <input type="datetime-local" name="date" value="{{ edit_retailer.date|datetime_input if edit_retailer else now_string }}" required>
+            </label>
+            <label>
+                <span>اسم التاجر</span>
+                <input type="text" name="retailer_name" value="{{ edit_retailer.retailer_name if edit_retailer else '' }}" required>
+            </label>
+            <label>
+                <span>الصنف</span>
+                <input type="text" name="fruit_name" value="{{ edit_retailer.fruit_name if edit_retailer else '' }}" required>
+            </label>
+            <label>
+                <span>الدرجة</span>
+                <input type="text" name="class_number" value="{{ edit_retailer.class_number if edit_retailer else '' }}" required>
+            </label>
+            <label>
+                <span>عدد الوحدات</span>
+                <input type="number" min="1" name="units_count" value="{{ edit_retailer.units_count if edit_retailer else '' }}" required>
+            </label>
+            <label>
+                <span>سعر الوحدة من المورد</span>
+                <input type="number" min="0" step="0.01" name="original_price_per_unit" value="{{ edit_retailer.original_price_per_unit if edit_retailer else '' }}" readonly>
+            </label>
+            <label>
+                <span>الخصم للوحدة</span>
+                <input type="number" min="0" step="0.01" name="discount_per_unit" value="{{ edit_retailer.discount_per_unit if edit_retailer else 0 }}" required>
+            </label>
+            <label class="full-width">
+                <span>ملاحظات</span>
+                <textarea name="notes" rows="3">{{ edit_retailer.notes if edit_retailer else '' }}</textarea>
+            </label>
+            <div class="form-actions full-width">
+                <button class="btn btn-primary" type="submit">{{ "حفظ التعديل" if edit_retailer else "إضافة الحركة" }}</button>
+                {% if edit_retailer %}
+                    <a class="btn btn-ghost" href="{{ url_for('special_retailers.special_retailers') }}">إلغاء</a>
+                {% endif %}
+            </div>
+        </form>
+    </article>
+
+    <article class="panel">
+        <div class="panel-head">
+            <div>
+                <h3>سجل تجار الآجل</h3>
+                <p>يمكن متابعة الرصيد المتبقي والحالة وإصدار إيصال محدث بعد كل دفعة.</p>
+            </div>
+        </div>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>التاريخ</th>
+                        <th>التاجر</th>
+                        <th>الصنف</th>
+                        <th>الدرجة</th>
+                        <th>الوحدات</th>
+                        <th>الإجمالي</th>
+                        <th>المدفوع</th>
+                        <th>المتبقي</th>
+                        <th>الحالة</th>
+                        <th>إجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in retailers %}
+                        <tr>
+                            <td>{{ item.date|date_ar }}</td>
+                            <td>{{ item.retailer_name }}</td>
+                            <td>{{ item.fruit_name }}</td>
+                            <td>{{ item.class_number }}</td>
+                            <td>{{ item.units_count }}</td>
+                            <td>{{ item.total_price|currency }}</td>
+                            <td>{{ item.total_paid|currency }}</td>
+                            <td>{{ item.remaining_balance|currency }}</td>
+                            <td>
+                                <span class="status {{ item.status }}">
+                                    {{ "مدفوع" if item.status == "paid" else ("مدفوع جزئياً" if item.status == "partial" else "غير مدفوع") }}
+                                </span>
+                            </td>
+                            <td class="actions-cell">
+                                <a class="btn btn-small btn-secondary" href="{{ url_for('payments.payments', retailer=item.id) }}">دفعة</a>
+                                <a class="btn btn-small btn-ghost" href="{{ url_for('special_retailers.special_retailer_receipt', retailer_id=item.id) }}">معاينة</a>
+                                {% if is_admin %}
+                                    <a class="btn btn-small btn-ghost" href="{{ url_for('special_retailers.special_retailers', edit=item.id) }}">تعديل</a>
+                                    <form method="post" action="{{ url_for('special_retailers.delete_special_retailer', retailer_id=item.id) }}">
+                                        <button class="btn btn-small btn-danger" type="submit" data-confirm="هل تريد حذف حركة الآجل؟">حذف</button>
+                                    </form>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr><td colspan="10" class="empty-state">لا توجد حركات آجل حتى الآن.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </article>
+</section>
+{% endblock %}

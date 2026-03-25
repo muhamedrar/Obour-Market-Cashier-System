@@ -1,0 +1,72 @@
+from flask import Blueprint, flash, redirect, render_template, request, session, url_for
+
+from models import get_session
+from models.expense import Expense
+from utils.helpers import (
+    admin_required,
+    build_base_context,
+    parse_date,
+    parse_float,
+    parse_int,
+)
+
+
+expense_bp = Blueprint("expenses", __name__, url_prefix="/expenses")
+
+
+@expense_bp.route("/", methods=["GET", "POST"])
+def expenses():
+    db_session = get_session()
+
+    if request.method == "POST":
+        expense_id = parse_int(request.form.get("expense_id"))
+        if expense_id and not session.get("admin_logged_in"):
+            flash("تعديل المصروفات يحتاج صلاحية المسؤول.", "error")
+            return redirect(url_for("admin.login", next=url_for("expenses.expenses")))
+
+        expense = db_session.get(Expense, expense_id) if expense_id else Expense()
+        if expense_id and not expense:
+            flash("المصروف غير موجود.", "error")
+            return redirect(url_for("expenses.expenses"))
+
+        expense.date = parse_date(request.form.get("date"))
+        expense.expense_name = request.form.get("expense_name", "").strip()
+        expense.amount = parse_float(request.form.get("amount"))
+
+        if not expense.expense_name or expense.amount <= 0:
+            flash("يرجى إدخال اسم المصروف وقيمته بشكل صحيح.", "error")
+            return redirect(url_for("expenses.expenses"))
+
+        db_session.add(expense)
+        db_session.commit()
+        flash("تم حفظ المصروف.", "success")
+        return redirect(url_for("expenses.expenses"))
+
+    edit_expense = None
+    edit_id = parse_int(request.args.get("edit"))
+    if edit_id:
+        edit_expense = db_session.get(Expense, edit_id)
+
+    expenses_list = db_session.query(Expense).order_by(Expense.date.desc(), Expense.id.desc()).all()
+    context = {
+        **build_base_context(db_session),
+        "page_title": "المصروفات",
+        "expenses_list": expenses_list,
+        "edit_expense": edit_expense,
+    }
+    return render_template("expenses.html", **context)
+
+
+@expense_bp.route("/<int:expense_id>/delete", methods=["POST"])
+@admin_required
+def delete_expense(expense_id: int):
+    db_session = get_session()
+    expense = db_session.get(Expense, expense_id)
+    if not expense:
+        flash("المصروف غير موجود.", "error")
+        return redirect(url_for("expenses.expenses"))
+
+    db_session.delete(expense)
+    db_session.commit()
+    flash("تم حذف المصروف.", "success")
+    return redirect(url_for("expenses.expenses"))

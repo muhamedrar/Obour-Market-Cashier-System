@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="content-grid single-wide">
+    <article class="panel form-panel">
+        <div class="panel-head">
+            <div>
+                <h3>{{ "تعديل بيع نقدي" if edit_transaction else "إضافة بيع نقدي" }}</h3>
+                <p>سعر الوحدة يؤخذ تلقائياً من المخزون المتاح بنظام FIFO، والعمولة والمصروف الإداري لا يعدلهما إلا المسؤول.</p>
+            </div>
+            <div class="preview-strip" data-sale-preview>
+                <span>سعر البيع للوحدة: <strong data-preview="unit_price">0.00</strong></span>
+                <span>الإجمالي النهائي: <strong data-preview="final_price">0.00</strong></span>
+            </div>
+        </div>
+        <form class="form-grid" method="post" data-sale-form="retail">
+            <input type="hidden" name="transaction_id" value="{{ edit_transaction.id if edit_transaction else '' }}">
+            <label>
+                <span>التاريخ</span>
+                <input type="datetime-local" name="date" value="{{ edit_transaction.date|datetime_input if edit_transaction else now_string }}" required>
+            </label>
+            <label>
+                <span>الصنف</span>
+                <input type="text" name="fruit_name" value="{{ edit_transaction.fruit_name if edit_transaction else '' }}" required data-sale-field="fruit">
+            </label>
+            <label>
+                <span>الدرجة</span>
+                <input type="text" name="class_number" value="{{ edit_transaction.class_number if edit_transaction else '' }}" required data-sale-field="class">
+            </label>
+            <label>
+                <span>عدد الوحدات</span>
+                <input type="number" min="1" name="units_count" value="{{ edit_transaction.units_count if edit_transaction else '' }}" required>
+            </label>
+            <label>
+                <span>سعر الوحدة من المورد</span>
+                <input type="number" min="0" step="0.01" name="original_price_per_unit" value="{{ edit_transaction.original_price_per_unit if edit_transaction else '' }}" readonly data-sale-field="price">
+            </label>
+            <label>
+                <span>الخصم للوحدة</span>
+                <input type="number" min="0" step="0.01" name="discount_per_unit" value="{{ edit_transaction.discount_per_unit if edit_transaction else 0 }}" required>
+            </label>
+            <label>
+                <span>العمولة للوحدة</span>
+                <input type="number" min="0" step="0.01" name="commission_per_unit" value="{{ edit_transaction.commission_per_unit if edit_transaction else default_commission }}" {% if not is_admin %}readonly{% endif %} required>
+            </label>
+            <label>
+                <span>المصروف الإداري</span>
+                <input type="number" min="0" step="0.01" name="admin_expense" value="{{ edit_transaction.admin_expense if edit_transaction else default_admin_expense }}" {% if not is_admin %}readonly{% endif %} required>
+            </label>
+            <label class="full-width">
+                <span>ملاحظات</span>
+                <textarea name="notes" rows="3">{{ edit_transaction.notes if edit_transaction else '' }}</textarea>
+            </label>
+            <div class="form-actions full-width">
+                <button class="btn btn-primary" type="submit">{{ "حفظ التعديل" if edit_transaction else "إضافة الحركة" }}</button>
+                {% if edit_transaction %}
+                    <a class="btn btn-ghost" href="{{ url_for('retail.retail') }}">إلغاء</a>
+                {% endif %}
+            </div>
+        </form>
+    </article>
+
+    <article class="panel">
+        <div class="panel-head">
+            <div>
+                <h3>البضاعة المتاحة أثناء الطلب</h3>
+                <p>اختر أي صف لنسخ الصنف والدرجة وسعر المورد إلى نموذج البيع.</p>
+            </div>
+        </div>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>المورد</th>
+                        <th>التاريخ</th>
+                        <th>الصنف</th>
+                        <th>الدرجة</th>
+                        <th>المتبقي</th>
+                        <th>سعر المورد</th>
+                        <th>اختيار</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for good in available_goods %}
+                        <tr>
+                            <td>{{ good.supplier_name }}</td>
+                            <td>{{ good.date|date_ar }}</td>
+                            <td>{{ good.fruit_name }}</td>
+                            <td>{{ good.class_number }}</td>
+                            <td>{{ good.remaining_units }}</td>
+                            <td>{{ good.price_per_unit|currency }}</td>
+                            <td>
+                                <button
+                                    class="btn btn-small btn-secondary"
+                                    type="button"
+                                    data-stock-pick
+                                    data-fruit="{{ good.fruit_name }}"
+                                    data-class="{{ good.class_number }}"
+                                    data-price="{{ '%.2f'|format(good.price_per_unit) }}"
+                                >
+                                    استخدام
+                                </button>
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr><td colspan="7" class="empty-state">لا توجد بضاعة متاحة حالياً.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </article>
+
+    <article class="panel">
+        <div class="panel-head">
+            <div>
+                <h3>حركات البيع النقدي</h3>
+                <p>الفاتورة تشمل العمولة والمصروف الإداري بعد الخصومات اليدوية.</p>
+            </div>
+        </div>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>التاريخ</th>
+                        <th>الصنف</th>
+                        <th>الدرجة</th>
+                        <th>الوحدات</th>
+                        <th>سعر الوحدة</th>
+                        <th>الخصم</th>
+                        <th>الإجمالي</th>
+                        <th>النهائي</th>
+                        <th>إجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in transactions %}
+                        <tr>
+                            <td>{{ item.date|date_ar }}</td>
+                            <td>{{ item.fruit_name }}</td>
+                            <td>{{ item.class_number }}</td>
+                            <td>{{ item.units_count }}</td>
+                            <td>{{ item.price_per_unit|currency }}</td>
+                            <td>{{ item.discount_per_unit|currency }}</td>
+                            <td>{{ item.total_price|currency }}</td>
+                            <td>{{ item.final_price|currency }}</td>
+                            <td class="actions-cell">
+                                <a class="btn btn-small btn-secondary" href="{{ url_for('retail.retail_receipt', transaction_id=item.id) }}">معاينة</a>
+                                {% if is_admin %}
+                                    <a class="btn btn-small btn-ghost" href="{{ url_for('retail.retail', edit=item.id) }}">تعديل</a>
+                                    <form method="post" action="{{ url_for('retail.delete_retail', transaction_id=item.id) }}">
+                                        <button class="btn btn-small btn-danger" type="submit" data-confirm="هل تريد حذف حركة البيع؟">حذف</button>
+                                    </form>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr><td colspan="9" class="empty-state">لا توجد حركات بيع نقدي حتى الآن.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </article>
+</section>
+{% endblock %}

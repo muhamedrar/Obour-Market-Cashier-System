@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="content-grid">
+    <article class="panel form-panel">
+        <div class="panel-head">
+            <div>
+                <h3>إعدادات النظام</h3>
+                <p>من هنا يمكن تحديث بيانات الشركة والعمولة والمصروف الإداري وكلمة مرور المسؤول.</p>
+            </div>
+        </div>
+        <form class="form-grid" method="post">
+            <label>
+                <span>اسم الشركة</span>
+                <input type="text" name="company_name" value="{{ settings.company_name }}" required>
+            </label>
+            <label>
+                <span>رقم الهاتف</span>
+                <input type="text" name="phone_number" value="{{ settings.phone_number }}" required>
+            </label>
+            <label>
+                <span>العمولة الافتراضية للوحدة</span>
+                <input type="number" min="0" step="0.01" name="commission_per_unit" value="{{ settings.commission_per_unit }}" required>
+            </label>
+            <label>
+                <span>المصروف الإداري الافتراضي</span>
+                <input type="number" min="0" step="0.01" name="admin_expense" value="{{ settings.admin_expense }}" required>
+            </label>
+            <label class="full-width">
+                <span>كلمة مرور جديدة</span>
+                <input type="password" name="new_password" placeholder="اتركها فارغة إذا لم ترغب بالتغيير">
+            </label>
+            <div class="info-box full-width">
+                كلمة المرور الافتراضية لأول تشغيل هي <code>admin123</code> ويمكن تغييرها فوراً من هنا.
+            </div>
+            <div class="form-actions full-width">
+                <button class="btn btn-primary" type="submit">حفظ الإعدادات</button>
+            </div>
+        </form>
+    </article>
+
+    <article class="panel">
+        <div class="panel-head">
+            <div>
+                <h3>آخر الموردين</h3>
+                <p>مراجعة سريعة للمدخلات الأخيرة.</p>
+            </div>
+        </div>
+        <div class="mini-list">
+            {% for supplier in recent_suppliers %}
+                <div class="mini-item">
+                    <strong>{{ supplier.supplier_name }}</strong>
+                    <span>{{ supplier.fruit_name }} | متبقي {{ supplier.remaining_units }}</span>
+                </div>
+            {% else %}
+                <div class="empty-state">لا توجد بيانات بعد.</div>
+            {% endfor %}
+        </div>
+    </article>
+
+    <article class="panel">
+        <div class="panel-head">
+            <div>
+                <h3>آخر المصروفات</h3>
+                <p>لمتابعة ما يؤثر على صافي الإيراد.</p>
+            </div>
+        </div>
+        <div class="mini-list">
+            {% for expense in recent_expenses %}
+                <div class="mini-item">
+                    <strong>{{ expense.expense_name }}</strong>
+                    <span>{{ expense.date|date_ar }} | {{ expense.amount|currency }}</span>
+                </div>
+            {% else %}
+                <div class="empty-state">لا توجد مصروفات بعد.</div>
+            {% endfor %}
+        </div>
+    </article>
+</section>
+{% endblock %}

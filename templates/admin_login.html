@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="login-shell">
+    <article class="panel login-panel">
+        <div class="panel-head">
+            <div>
+                <h3>دخول المسؤول</h3>
+                <p>هذه الصفحة مطلوبة قبل تعديل أو حذف الحركات والإعدادات.</p>
+            </div>
+        </div>
+        <form class="form-grid" method="post">
+            <label class="full-width">
+                <span>كلمة المرور</span>
+                <input type="password" name="password" required>
+            </label>
+            <div class="info-box full-width">
+                كلمة المرور الافتراضية لأول تشغيل: <code>admin123</code>
+            </div>
+            <div class="form-actions full-width">
+                <button class="btn btn-primary" type="submit">دخول</button>
+            </div>
+        </form>
+    </article>
+</section>
+{% endblock %}

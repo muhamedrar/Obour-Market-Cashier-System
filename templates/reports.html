@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="hero-panel">
+    <div>
+        <span class="eyebrow">تقارير شاملة</span>
+        <h3>ملخص المخزون والمبيعات وصافي الإيراد</h3>
+        <p>هذه الصفحة نفسها هي المعاينة قبل الطباعة أو تنزيل PDF.</p>
+    </div>
+    <div class="inline-form">
+        <button class="btn btn-secondary" type="button" onclick="window.print()">طباعة المعاينة</button>
+        <a class="btn btn-primary" href="{{ url_for('admin.report_pdf') }}">تنزيل PDF</a>
+    </div>
+</section>
+
+<section class="kpi-grid">
+    <article class="kpi-card">
+        <span>إجمالي الإيراد</span>
+        <strong>{{ breakdown.total_revenue|currency }}</strong>
+    </article>
+    <article class="kpi-card">
+        <span>صافي الإيراد</span>
+        <strong>{{ breakdown.net_revenue|currency }}</strong>
+    </article>
+    <article class="kpi-card">
+        <span>الإيراد الحالي</span>
+        <strong>{{ breakdown.current_revenue|currency }}</strong>
+    </article>
+    <article class="kpi-card">
+        <span>إجمالي الديون</span>
+        <strong>{{ breakdown.debt_total|currency }}</strong>
+    </article>
+</section>
+
+<section class="kpi-grid reports-kpis">
+    <article class="kpi-card">
+        <span>إجمالي العمولات</span>
+        <strong>{{ breakdown.commission_total|currency }}</strong>
+    </article>
+    <article class="kpi-card">
+        <span>المصروف الإداري</span>
+        <strong>{{ breakdown.admin_fees_total|currency }}</strong>
+    </article>
+    <article class="kpi-card">
+        <span>تكلفة البضاعة المباعة</span>
+        <strong>{{ breakdown.supplier_cost_total|currency }}</strong>
+    </article>
+    <article class="kpi-card">
+        <span>المصروفات الأخرى</span>
+        <strong>{{ breakdown.other_expenses_total|currency }}</strong>
+    </article>
+</section>
+
+<section class="content-grid single-wide">
+    <article class="panel">
+        <div class="panel-head">
+            <div>
+                <h3>ملخص المخزون</h3>
+                <p>يبين المتبقي الحالي حسب الصنف والدرجة.</p>
+            </div>
+        </div>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>الصنف</th>
+                        <th>الدرجة</th>
+                        <th>الوحدات</th>
+                        <th>متوسط السعر</th>
+                        <th>القيمة</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in inventory_rows %}
+                        <tr>
+                            <td>{{ row.fruit_name }}</td>
+                            <td>{{ row.class_number }}</td>
+                            <td>{{ row.remaining_units }}</td>
+                            <td>{{ row.avg_price|currency }}</td>
+                            <td>{{ row.total_value|currency }}</td>
+                        </tr>
+                    {% else %}
+                        <tr><td colspan="5" class="empty-state">لا يوجد مخزون حالياً.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </article>
+
+    <article class="panel">
+        <div class="panel-head">
+            <div>
+                <h3>ملخص الوحدات المباعة</h3>
+                <p>يجمع مبيعات النقدي والآجل في جدول واحد.</p>
+            </div>
+        </div>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>الصنف</th>
+                        <th>الدرجة</th>
+                        <th>الوحدات المباعة</th>
+                        <th>الإيراد</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in sold_rows %}
+                        <tr>
+                            <td>{{ row.fruit_name }}</td>
+                            <td>{{ row.class_number }}</td>
+                            <td>{{ row.units_count }}</td>
+                            <td>{{ row.revenue|currency }}</td>
+                        </tr>
+                    {% else %}
+                        <tr><td colspan="4" class="empty-state">لا توجد مبيعات حتى الآن.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </article>
+</section>
+{% endblock %}
