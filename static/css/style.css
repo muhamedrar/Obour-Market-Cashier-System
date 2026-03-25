@@ -50,7 +50,9 @@ textarea {
 
 .sidebar {
     padding: 28px;
-    background: linear-gradient(180deg, rgba(8, 56, 65, 0.95) 0%, rgba(16, 34, 43, 0.92) 100%);
+    background:
+        linear-gradient(180deg, rgba(8, 56, 65, 0.84) 0%, rgba(16, 34, 43, 0.86) 100%),
+        url("../fruitsPic.jpg") center/cover no-repeat;
     color: #f8fbfb;
     border-left: 1px solid rgba(255, 255, 255, 0.08);
     direction: rtl;
@@ -106,6 +108,13 @@ textarea {
     font-size: 0.95rem;
 }
 
+.brand-meta-stack {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 12px;
+}
+
 .nav-links {
     display: grid;
     gap: 10px;
@@ -140,6 +149,10 @@ textarea {
 .settings-card {
     display: grid;
     gap: 14px;
+}
+
+.sidebar-spacer {
+    margin-top: 28px;
 }
 
 .settings-card div {
@@ -228,6 +241,10 @@ textarea {
     grid-column: 1 / -1;
 }
 
+.dashboard-bottom-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 .kpi-card,
 .panel {
     padding: 24px;
@@ -268,6 +285,21 @@ textarea {
 
 .full-width {
     grid-column: 1 / -1;
+}
+
+.price-display-box {
+    display: grid;
+    align-content: center;
+    gap: 8px;
+    text-align: right;
+}
+
+.price-display-box strong {
+    color: var(--primary-dark);
+}
+
+.price-display-box span {
+    color: var(--muted);
 }
 
 input,
@@ -342,6 +374,17 @@ textarea:focus {
 
 .table-wrap {
     overflow-x: auto;
+}
+
+.records-scroll {
+    max-height: 340px;
+    overflow: auto;
+}
+
+.records-scroll-list {
+    max-height: 372px;
+    overflow-y: auto;
+    padding-left: 4px;
 }
 
 table {
@@ -499,6 +542,10 @@ th {
     .content-grid,
     .form-grid,
     .kpi-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .dashboard-bottom-grid {
         grid-template-columns: 1fr;
     }
 

@@ -5,6 +5,7 @@ from models.retail_transaction import RetailTransaction
 from utils.helpers import (
     admin_required,
     allocate_inventory_fifo,
+    apply_date_range,
     available_goods,
     build_base_context,
     calculate_sale_totals,
@@ -14,6 +15,7 @@ from utils.helpers import (
     parse_float,
     parse_int,
     restore_inventory_allocations,
+    split_phone_numbers,
 )
 from utils.report_generator import build_pdf
 
@@ -119,11 +121,18 @@ def retail():
     if edit_id:
         edit_transaction = db_session.get(RetailTransaction, edit_id)
 
-    transactions = (
-        db_session.query(RetailTransaction)
-        .order_by(RetailTransaction.date.desc(), RetailTransaction.id.desc())
-        .all()
+    date_from = request.args.get("date_from", "").strip()
+    date_to = request.args.get("date_to", "").strip()
+    transactions_query = db_session.query(RetailTransaction)
+    transactions_query = apply_date_range(
+        transactions_query,
+        RetailTransaction.date,
+        date_from or None,
+        date_to or None,
     )
+    transactions = transactions_query.order_by(
+        RetailTransaction.date.desc(), RetailTransaction.id.desc()
+    ).all()
     goods = available_goods(db_session)
     context = {
         **build_base_context(db_session),
@@ -133,6 +142,8 @@ def retail():
         "default_commission": settings.commission_per_unit,
         "default_admin_expense": settings.admin_expense,
         "available_goods": goods,
+        "date_from": date_from,
+        "date_to": date_to,
     }
     return render_template("retail.html", **context)
 
@@ -169,7 +180,7 @@ def retail_receipt(transaction_id: int):
         "report_subtitle": "مناسبة للطباعة الحرارية والمعاينة قبل التنزيل.",
         "meta_lines": [
             f"الشركة: {settings.company_name}",
-            f"الهاتف: {settings.phone_number}",
+            *[f"الهاتف: {phone}" for phone in split_phone_numbers(settings.phone_number)],
             f"التاريخ: {transaction.date.strftime('%Y-%m-%d %H:%M')}",
             f"العمولة للوحدة: {transaction.commission_per_unit:.2f} ج.م",
             f"المصروف الإداري: {transaction.admin_expense:.2f} ج.م",
@@ -208,7 +219,7 @@ def retail_receipt_pdf(transaction_id: int):
         "فاتورة بيع نقدي",
         [
             f"الشركة: {settings.company_name}",
-            f"الهاتف: {settings.phone_number}",
+            *[f"الهاتف: {phone}" for phone in split_phone_numbers(settings.phone_number)],
             f"التاريخ: {transaction.date.strftime('%Y-%m-%d %H:%M')}",
             f"العمولة للوحدة: {transaction.commission_per_unit:.2f}",
             f"المصروف الإداري: {transaction.admin_expense:.2f}",

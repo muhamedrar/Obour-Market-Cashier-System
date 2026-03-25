@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import date, datetime
+from datetime import date, datetime, time
 from functools import wraps
 
 from flask import flash, redirect, request, session, url_for
@@ -303,6 +303,11 @@ def payment_total_for_retailer(db_session, retailer_id: int) -> float:
     return round(total or 0, 2)
 
 
+def received_payments_total(db_session) -> float:
+    total = db_session.scalar(select(func.coalesce(func.sum(Payment.amount_paid), 0)))
+    return round(float(total or 0), 2)
+
+
 def supplier_cost_total(db_session) -> float:
     total = db_session.scalar(
         select(func.coalesce(func.sum(InventoryAllocation.units_count * Supplier.price_per_unit), 0))
@@ -331,10 +336,17 @@ def revenue_breakdown(db_session):
         select(func.coalesce(func.sum(SpecialRetailer.total_price), 0))
     ) or 0
     supplier_costs = supplier_cost_total(db_session)
+    debt_paid_total = received_payments_total(db_session)
 
-    net_revenue = round(float(commission_total) + float(admin_fees_total), 2)
-    current_revenue = round(net_revenue + supplier_costs, 2)
-    total_revenue = round(current_revenue + float(other_expenses_total) + float(debt_total), 2)
+    total_revenue = round(
+        float(commission_total) + float(admin_fees_total) + supplier_costs + float(debt_total),
+        2,
+    )
+    net_revenue = round(
+        float(commission_total) + float(admin_fees_total) - float(other_expenses_total),
+        2,
+    )
+    current_revenue = round(net_revenue + supplier_costs + debt_paid_total, 2)
 
     return {
         "commission_total": round(float(commission_total), 2),
@@ -342,6 +354,7 @@ def revenue_breakdown(db_session):
         "supplier_cost_total": supplier_costs,
         "other_expenses_total": round(float(other_expenses_total), 2),
         "debt_total": round(float(debt_total), 2),
+        "debt_paid_total": debt_paid_total,
         "net_revenue": net_revenue,
         "current_revenue": current_revenue,
         "total_revenue": total_revenue,
@@ -380,8 +393,10 @@ def navigation_badges(db_session):
 
 
 def build_base_context(db_session):
+    settings = get_or_create_settings(db_session)
     return {
-        "settings": get_or_create_settings(db_session),
+        "settings": settings,
+        "phone_numbers": split_phone_numbers(settings.phone_number),
         "nav_badges": navigation_badges(db_session),
         "is_admin": is_admin_logged_in(),
         "now_string": datetime.now().strftime("%Y-%m-%dT%H:%M"),
@@ -459,3 +474,22 @@ def available_goods(db_session):
         .order_by(Supplier.date.asc(), Supplier.id.asc())
         .all()
     )
+
+
+def split_phone_numbers(value: str | None) -> list[str]:
+    if not value:
+        return []
+    numbers = []
+    for line in value.replace(",", "\n").splitlines():
+        cleaned = line.strip()
+        if cleaned:
+            numbers.append(cleaned)
+    return numbers
+
+
+def apply_date_range(query, column, date_from: str | None, date_to: str | None):
+    if date_from:
+        query = query.filter(column >= datetime.combine(datetime.strptime(date_from, "%Y-%m-%d").date(), time.min))
+    if date_to:
+        query = query.filter(column <= datetime.combine(datetime.strptime(date_to, "%Y-%m-%d").date(), time.max))
+    return query

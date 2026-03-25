@@ -7,6 +7,7 @@ forms.forEach((form) => {
     const commissionInput = form.querySelector('input[name="commission_per_unit"]');
     const adminExpenseInput = form.querySelector('input[name="admin_expense"]');
     const previewRoot = form.closest(".panel")?.querySelector("[data-sale-preview]");
+    const priceDisplay = form.querySelector("[data-sale-price-display]");
 
     const renderPreview = () => {
         if (!previewRoot || !unitsInput || !originalInput || !discountInput) {
@@ -24,6 +25,11 @@ forms.forEach((form) => {
             ? totalPrice + (commission * units) + adminExpense
             : totalPrice;
 
+        if (priceDisplay) {
+            priceDisplay.textContent = originalPrice > 0
+                ? `${originalPrice.toFixed(2)} ج.م`
+                : "يتم جلبه تلقائياً من بيانات المورد";
+        }
         previewRoot.querySelector('[data-preview="unit_price"]').textContent = unitPrice.toFixed(2);
         previewRoot.querySelector('[data-preview="final_price"]').textContent = finalPrice.toFixed(2);
     };
@@ -53,6 +59,12 @@ document.querySelectorAll("[data-stock-pick]").forEach((button) => {
         }
         if (priceInput) {
             priceInput.value = button.dataset.price || "";
+        }
+        const priceDisplay = form.querySelector("[data-sale-price-display]");
+        if (priceDisplay) {
+            priceDisplay.textContent = button.dataset.price
+                ? `${Number(button.dataset.price).toFixed(2)} ج.م`
+                : "يتم جلبه تلقائياً من بيانات المورد";
         }
 
         form.dispatchEvent(new Event("input", { bubbles: true }));

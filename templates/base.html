@@ -14,7 +14,11 @@
                 <span class="brand-kicker">Cashier & Inventory</span>
                 <h1>{{ settings.company_name }}</h1>
                 <p>نظام عربي محلي لإدارة الموردين والمبيعات والديون.</p>
-                <div class="meta-pill">{{ settings.phone_number }}</div>
+                <div class="brand-meta-stack">
+                    {% for phone in phone_numbers %}
+                        <div class="meta-pill">{{ phone }}</div>
+                    {% endfor %}
+                </div>
             </div>
 
             <nav class="nav-links">
@@ -28,7 +32,7 @@
                 <a class="{{ 'active' if request.endpoint in ['admin.admin_panel', 'admin.login'] else '' }}" href="{{ url_for('admin.admin_panel' if is_admin else 'admin.login') }}">&#9881; المسؤول</a>
             </nav>
 
-            <div class="settings-card">
+            <div class="settings-card sidebar-spacer">
                 <div>
                     <strong>العمولة الافتراضية</strong>
                     <span>{{ settings.commission_per_unit|currency }}</span>

@@ -29,6 +29,7 @@ from utils.helpers import (
     parse_float,
     revenue_breakdown,
     sold_units_summary,
+    split_phone_numbers,
     verify_password,
 )
 from utils.report_generator import build_pdf
@@ -122,6 +123,7 @@ def report_pdf():
             ["إجمالي العمولات", "-", "-", "-", f"{breakdown['commission_total']:.2f}"],
             ["إجمالي المصروف الإداري", "-", "-", "-", f"{breakdown['admin_fees_total']:.2f}"],
             ["إجمالي تكلفة البضاعة", "-", "-", "-", f"{breakdown['supplier_cost_total']:.2f}"],
+            ["إجمالي الديون المحصلة", "-", "-", "-", f"{breakdown['debt_paid_total']:.2f}"],
             ["إجمالي المصروفات الأخرى", "-", "-", "-", f"{breakdown['other_expenses_total']:.2f}"],
             ["إجمالي الديون المسجلة", "-", "-", "-", f"{breakdown['debt_total']:.2f}"],
             ["إجمالي الإيراد", "-", "-", "-", f"{breakdown['total_revenue']:.2f}"],
@@ -134,7 +136,7 @@ def report_pdf():
         "تقرير النظام",
         [
             f"الشركة: {settings.company_name}",
-            f"الهاتف: {settings.phone_number}",
+            *[f"الهاتف: {phone}" for phone in split_phone_numbers(settings.phone_number)],
             f"تاريخ التقرير: {datetime.now().strftime('%Y-%m-%d %H:%M')}",
         ],
         ["البيان", "الدرجة", "الوحدات", "السعر", "الإجمالي"],

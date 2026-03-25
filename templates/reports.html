@@ -46,6 +46,10 @@
         <strong>{{ breakdown.supplier_cost_total|currency }}</strong>
     </article>
     <article class="kpi-card">
+        <span>الديون المحصلة</span>
+        <strong>{{ breakdown.debt_paid_total|currency }}</strong>
+    </article>
+    <article class="kpi-card">
         <span>المصروفات الأخرى</span>
         <strong>{{ breakdown.other_expenses_total|currency }}</strong>
     </article>
@@ -59,7 +63,7 @@
                 <p>يبين المتبقي الحالي حسب الصنف والدرجة.</p>
             </div>
         </div>
-        <div class="table-wrap">
+        <div class="table-wrap records-scroll">
             <table>
                 <thead>
                     <tr>
@@ -94,7 +98,7 @@
                 <p>يجمع مبيعات النقدي والآجل في جدول واحد.</p>
             </div>
         </div>
-        <div class="table-wrap">
+        <div class="table-wrap records-scroll">
             <table>
                 <thead>
                     <tr>

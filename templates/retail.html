@@ -15,6 +15,7 @@
         </div>
         <form class="form-grid" method="post" data-sale-form="retail">
             <input type="hidden" name="transaction_id" value="{{ edit_transaction.id if edit_transaction else '' }}">
+            <input type="hidden" name="original_price_per_unit" value="{{ edit_transaction.original_price_per_unit if edit_transaction else '' }}" data-sale-field="price">
             <label>
                 <span>التاريخ</span>
                 <input type="datetime-local" name="date" value="{{ edit_transaction.date|datetime_input if edit_transaction else now_string }}" required>
@@ -31,10 +32,10 @@
                 <span>عدد الوحدات</span>
                 <input type="number" min="1" name="units_count" value="{{ edit_transaction.units_count if edit_transaction else '' }}" required>
             </label>
-            <label>
-                <span>سعر الوحدة من المورد</span>
-                <input type="number" min="0" step="0.01" name="original_price_per_unit" value="{{ edit_transaction.original_price_per_unit if edit_transaction else '' }}" readonly data-sale-field="price">
-            </label>
+            <div class="info-box price-display-box">
+                <strong>سعر الوحدة من المورد</strong>
+                <span data-sale-price-display>{{ edit_transaction.original_price_per_unit|currency if edit_transaction else "يتم جلبه تلقائياً من بيانات المورد" }}</span>
+            </div>
             <label>
                 <span>الخصم للوحدة</span>
                 <input type="number" min="0" step="0.01" name="discount_per_unit" value="{{ edit_transaction.discount_per_unit if edit_transaction else 0 }}" required>
@@ -67,7 +68,7 @@
                 <p>اختر أي صف لنسخ الصنف والدرجة وسعر المورد إلى نموذج البيع.</p>
             </div>
         </div>
-        <div class="table-wrap">
+        <div class="table-wrap records-scroll">
             <table>
                 <thead>
                     <tr>
@@ -116,8 +117,16 @@
                 <h3>حركات البيع النقدي</h3>
                 <p>الفاتورة تشمل العمولة والمصروف الإداري بعد الخصومات اليدوية.</p>
             </div>
+            <form class="inline-form" method="get">
+                <input type="date" name="date_from" value="{{ date_from }}">
+                <input type="date" name="date_to" value="{{ date_to }}">
+                <button class="btn btn-secondary" type="submit">تصفية</button>
+                {% if date_from or date_to %}
+                    <a class="btn btn-ghost" href="{{ url_for('retail.retail') }}">مسح</a>
+                {% endif %}
+            </form>
         </div>
-        <div class="table-wrap">
+        <div class="table-wrap records-scroll">
             <table>
                 <thead>
                     <tr>

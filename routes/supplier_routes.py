@@ -5,6 +5,7 @@ from models import get_session
 from models.supplier import Supplier
 from utils.helpers import (
     admin_required,
+    apply_date_range,
     build_base_context,
     parse_date,
     parse_float,
@@ -60,6 +61,8 @@ def suppliers():
         edit_supplier = db_session.get(Supplier, edit_id)
 
     search_query = request.args.get("q", "").strip()
+    date_from = request.args.get("date_from", "").strip()
+    date_to = request.args.get("date_to", "").strip()
     suppliers_query = db_session.query(Supplier)
     if search_query:
         like_value = f"%{search_query}%"
@@ -71,6 +74,7 @@ def suppliers():
                 Supplier.notes.ilike(like_value),
             )
         )
+    suppliers_query = apply_date_range(suppliers_query, Supplier.date, date_from or None, date_to or None)
 
     suppliers_list = suppliers_query.order_by(Supplier.date.desc(), Supplier.id.desc()).all()
     context = {
@@ -79,6 +83,8 @@ def suppliers():
         "suppliers_list": suppliers_list,
         "edit_supplier": edit_supplier,
         "search_query": search_query,
+        "date_from": date_from,
+        "date_to": date_to,
     }
     return render_template("suppliers.html", **context)
 

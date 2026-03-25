@@ -14,6 +14,7 @@ from utils.helpers import (
     parse_int,
     payment_total_for_retailer,
     restore_inventory_allocations,
+    split_phone_numbers,
     update_special_retailer_status,
 )
 from utils.report_generator import build_pdf
@@ -161,7 +162,7 @@ def special_retailer_receipt(retailer_id: int):
         "report_subtitle": "معاينة قبل التنزيل أو الطباعة الحرارية.",
         "meta_lines": [
             f"الشركة: {settings.company_name}",
-            f"الهاتف: {settings.phone_number}",
+            *[f"الهاتف: {phone}" for phone in split_phone_numbers(settings.phone_number)],
             f"التاجر: {retailer.retailer_name}",
             f"التاريخ: {retailer.date.strftime('%Y-%m-%d %H:%M')}",
         ],
@@ -220,7 +221,7 @@ def special_retailer_receipt_pdf(retailer_id: int):
         "إيصال تاجر آجل",
         [
             f"الشركة: {settings.company_name}",
-            f"الهاتف: {settings.phone_number}",
+            *[f"الهاتف: {phone}" for phone in split_phone_numbers(settings.phone_number)],
             f"التاجر: {retailer.retailer_name}",
             f"التاريخ: {retailer.date.strftime('%Y-%m-%d %H:%M')}",
         ],

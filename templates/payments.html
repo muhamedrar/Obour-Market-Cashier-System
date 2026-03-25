@@ -56,7 +56,7 @@
                 <p>اضغط على أي تاجر لفتح صفحة الدفعات الخاصة به مباشرة.</p>
             </div>
         </div>
-        <div class="mini-list">
+        <div class="mini-list records-scroll-list">
             {% for retailer in retailers %}
                 <a class="mini-item" href="{{ url_for('payments.payments', retailer=retailer.id) }}">
                     <strong>{{ retailer.retailer_name }}</strong>
@@ -78,7 +78,7 @@
                 <p>يتم تحديث إجمالي المدفوع والرصيد المتبقي فوراً بعد كل دفعة.</p>
             </div>
         </div>
-        <div class="table-wrap">
+        <div class="table-wrap records-scroll">
             <table>
                 <thead>
                     <tr>
