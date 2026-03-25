@@ -1,0 +1,43 @@
+Cashier and inventory system:
+
+this system is an middle man between suppliers and Retailers where it will operates in a place that suppliers provides their fruits in this place
+and the Retailers can buy fruits and pay for the place and take a reset, and after the supplier fruits ends the place pays them means that the supplier get his money after the
+goods ends, the place take  commission on each unit , and there is Administrative expenses on each sale it got added to the Retailer reset, and finaly there is other expenses like breakfast , drinks its all should recorded,
+there is special Retailers that takes goods and dont pay right now but they have a reset like noraml Retailers and pay later so we can give them reset with negative
+
+tab one(suppliers)
+    can add and view date,suppliers name ,fruit name, units count , class number , price per unit, total price, notes
+    the supplier goods units should be updated till it ends and this confirms that this supplier is clear
+
+tab 2 (Retailers transactions)
+    can add and view date,fruit name, units count , class number , price per unit, total price, notes
+    can generate reset for every transaction with date,units count , class number , price per unit,Administrative expenses, (total price + place commission on every unit)
+        and on the top of reset the company name and their phone numbers
+tab3 (special Retailers)
+    can add and view date,Retailer name,fruit name, units count , class number , price per unit, total price, notes
+
+tab4 (other expenses)
+    can add and view date,expenses name, price
+    note expenses should substracted from the total revenue
+
+in the top i need some kpis
+    number of current suppliers(still have goods)
+    number of current units and drop down to filter fruit name
+    today revenue
+    today expenses
+
+i need button that can generate current report that views:
+    number of current units in inventory for each fruit, class number, unit price , total price
+    number of sold units for each fruit, class number , unit price , total price
+
+    total revenue
+
+i need also a feature where i can sill with discount for example for some usits remains in the inventory
+
+also in the top of the main page i want gear settings when i click on it requeirs password for Admin
+    admin can remove or change Administrative expenses
+    can edit or remove any transaction and when he do that it should reflect in the total revenue and unit counts
+    can change company name and phone numbers that is on reset, company name is also in the main page
+    can change or remove commission on each unit
+
+

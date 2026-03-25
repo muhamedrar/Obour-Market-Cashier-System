@@ -1,0 +1,19 @@
+the reports
+    it appears reversed characters and unreadable
+    i want it reset printable that will be printed on Thermal printer
+    and can printed as pdf reports
+
+the total revenue kpi should be the amount of all (admin expense , comesions, total units prices,other expenses, and even the dept as positve to see how we sold)
+and add another kpi that shows the net revenue it is basicly the  the total revenue kpi but without (dept,other expenses,total units prices) this the net after clear the suppliers
+and another another kpi that shows the current revenue its the net revenue + total units prices (this the before clear the suppliers)
+
+i want a search on suppliers
+the dates should include time
+when i click on any report i want to preview to to download
+
+the side bar should be on the left
+
+the normal user can not edit the comesion on unit or the admin expense only the admin can
+and the normal use cannot edit the unit price it should be graped from the supplier entered unit price
+
+in بيع النقدي tab i want to view available goods so the user can view them while making an order

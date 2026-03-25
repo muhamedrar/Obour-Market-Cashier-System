@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="hero-panel">
+    <div>
+        <span class="eyebrow">معاينة قبل التنزيل</span>
+        <h3>{{ report_title }}</h3>
+        <p>{{ report_subtitle }}</p>
+    </div>
+    <div class="inline-form">
+        <button class="btn btn-secondary" type="button" onclick="window.print()">طباعة</button>
+        <a class="btn btn-primary" href="{{ download_url }}">تنزيل PDF</a>
+    </div>
+</section>
+
+<section class="print-preview-shell {{ print_mode }}">
+    <article class="print-sheet">
+        <header class="print-head">
+            <h3>{{ report_title }}</h3>
+            {% for line in meta_lines %}
+                <p>{{ line }}</p>
+            {% endfor %}
+        </header>
+
+        <div class="table-wrap">
+            <table class="print-table">
+                <thead>
+                    <tr>
+                        {% for header in table_headers %}
+                            <th>{{ header }}</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in table_rows %}
+                        <tr>
+                            {% for cell in row %}
+                                <td>{{ cell }}</td>
+                            {% endfor %}
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if summary_lines %}
+            <div class="print-summary">
+                {% for label, value in summary_lines %}
+                    <div>
+                        <strong>{{ label }}</strong>
+                        <span>
+                            {% if value is number %}
+                                {{ value|currency }}
+                            {% else %}
+                                {{ value }}
+                            {% endif %}
+                        </span>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </article>
+</section>
+{% endblock %}

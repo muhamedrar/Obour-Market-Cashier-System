@@ -45,6 +45,7 @@ textarea {
     display: grid;
     grid-template-columns: 310px minmax(0, 1fr);
     min-height: 100vh;
+    direction: ltr;
 }
 
 .sidebar {
@@ -52,6 +53,7 @@ textarea {
     background: linear-gradient(180deg, rgba(8, 56, 65, 0.95) 0%, rgba(16, 34, 43, 0.92) 100%);
     color: #f8fbfb;
     border-left: 1px solid rgba(255, 255, 255, 0.08);
+    direction: rtl;
 }
 
 .brand-card,
@@ -148,6 +150,7 @@ textarea {
 
 .main-content {
     padding: 26px;
+    direction: rtl;
 }
 
 .topbar,
@@ -217,8 +220,7 @@ textarea {
     grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
-.content-grid.single-wide,
-.reports-kpis {
+.content-grid.single-wide {
     grid-template-columns: 1fr;
 }
 
@@ -365,6 +367,54 @@ th {
     gap: 12px;
 }
 
+.print-preview-shell {
+    display: flex;
+    justify-content: center;
+}
+
+.print-sheet {
+    width: min(100%, 820px);
+    padding: 26px;
+    border-radius: 24px;
+    background: #fff;
+    border: 1px solid var(--line);
+    box-shadow: var(--shadow);
+}
+
+.print-preview-shell.thermal .print-sheet {
+    width: min(100%, 360px);
+}
+
+.print-head {
+    text-align: center;
+    margin-bottom: 18px;
+}
+
+.print-head p {
+    margin: 6px 0;
+    color: var(--muted);
+}
+
+.print-table th,
+.print-table td {
+    white-space: normal;
+}
+
+.print-summary {
+    display: grid;
+    gap: 10px;
+    margin-top: 18px;
+}
+
+.print-summary div {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: 14px;
+    background: rgba(12, 91, 105, 0.06);
+}
+
 .mini-item {
     display: grid;
     gap: 6px;
@@ -457,5 +507,41 @@ th {
     .panel-head {
         flex-direction: column;
         align-items: stretch;
+    }
+}
+
+@media print {
+    body {
+        background: #fff;
+    }
+
+    .sidebar,
+    .topbar,
+    .hero-panel .inline-form,
+    .topbar-actions,
+    .flash-stack {
+        display: none !important;
+    }
+
+    .page-shell {
+        display: block;
+    }
+
+    .main-content {
+        padding: 0;
+    }
+
+    .hero-panel,
+    .panel,
+    .print-sheet {
+        box-shadow: none;
+        border: 0;
+        background: #fff;
+        padding: 0;
+    }
+
+    .print-preview-shell.thermal .print-sheet {
+        width: 80mm;
+        max-width: 80mm;
     }
 }

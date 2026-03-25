@@ -34,6 +34,31 @@ forms.forEach((form) => {
     renderPreview();
 });
 
+document.querySelectorAll("[data-stock-pick]").forEach((button) => {
+    button.addEventListener("click", () => {
+        const form = document.querySelector('[data-sale-form="retail"]');
+        if (!form) {
+            return;
+        }
+
+        const fruitInput = form.querySelector('[data-sale-field="fruit"]');
+        const classInput = form.querySelector('[data-sale-field="class"]');
+        const priceInput = form.querySelector('[data-sale-field="price"]');
+
+        if (fruitInput) {
+            fruitInput.value = button.dataset.fruit || "";
+        }
+        if (classInput) {
+            classInput.value = button.dataset.class || "";
+        }
+        if (priceInput) {
+            priceInput.value = button.dataset.price || "";
+        }
+
+        form.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+});
+
 document.querySelectorAll("[data-confirm]").forEach((button) => {
     button.addEventListener("click", (event) => {
         const message = button.getAttribute("data-confirm");
