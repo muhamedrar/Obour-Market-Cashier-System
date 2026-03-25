@@ -172,8 +172,6 @@ def special_retailer_receipt(retailer_id: int):
             *[f"الهاتف: {phone}" for phone in split_phone_numbers(settings.phone_number)],
             f"التاجر: {retailer.retailer_name}",
             f"التاريخ: {retailer.date.strftime('%Y-%m-%d %H:%M')}",
-            f"العمولة للوحدة: {retailer.commission_per_unit:.2f} ج.م",
-            f"المصروف الإداري: {retailer.admin_expense:.2f} ج.م",
         ],
         "table_headers": ["الصنف", "الدرجة", "الوحدات", "سعر الوحدة", "القيمة"],
         "table_rows": [[
@@ -235,8 +233,6 @@ def special_retailer_receipt_pdf(retailer_id: int):
             *[f"الهاتف: {phone}" for phone in split_phone_numbers(settings.phone_number)],
             f"التاجر: {retailer.retailer_name}",
             f"التاريخ: {retailer.date.strftime('%Y-%m-%d %H:%M')}",
-            f"العمولة للوحدة: {retailer.commission_per_unit:.2f}",
-            f"المصروف الإداري: {retailer.admin_expense:.2f}",
         ],
         ["الصنف", "الحالة", "الوحدات", "سعر الوحدة", "القيمة"],
         rows,

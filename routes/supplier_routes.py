@@ -63,6 +63,7 @@ def suppliers():
     search_query = request.args.get("q", "").strip()
     date_from = request.args.get("date_from", "").strip()
     date_to = request.args.get("date_to", "").strip()
+    status_filter = request.args.get("status", "").strip()
     suppliers_query = db_session.query(Supplier)
     if search_query:
         like_value = f"%{search_query}%"
@@ -75,6 +76,10 @@ def suppliers():
             )
         )
     suppliers_query = apply_date_range(suppliers_query, Supplier.date, date_from or None, date_to or None)
+    if status_filter == "active":
+        suppliers_query = suppliers_query.filter(Supplier.remaining_units > 0)
+    elif status_filter == "cleared":
+        suppliers_query = suppliers_query.filter(Supplier.remaining_units <= 0)
 
     suppliers_list = suppliers_query.order_by(Supplier.date.desc(), Supplier.id.desc()).all()
     context = {
@@ -85,6 +90,7 @@ def suppliers():
         "search_query": search_query,
         "date_from": date_from,
         "date_to": date_to,
+        "status_filter": status_filter,
     }
     return render_template("suppliers.html", **context)
 

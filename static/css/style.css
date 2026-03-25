@@ -85,20 +85,26 @@ textarea {
     margin: 0 0 8px;
 }
 
-.brand-title-row {
+.brand-kicker-row {
     display: flex;
     align-items: center;
     gap: 12px;
-    margin-bottom: 8px;
+    margin-bottom: 12px;
 }
 
 .brand-logo {
-    width: 48px;
-    height: 48px;
+    width: 42px;
+    height: 42px;
     object-fit: contain;
-    border-radius: 14px;
+    border-radius: 12px;
     background: rgba(255, 255, 255, 0.14);
-    padding: 6px;
+    padding: 5px;
+    flex-shrink: 0;
+}
+
+.brand-kicker-row .brand-kicker {
+    margin-bottom: 0;
+    line-height: 1.1;
 }
 
 .brand-card p,

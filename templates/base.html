@@ -12,11 +12,11 @@
     <div class="page-shell">
         <aside class="sidebar">
             <div class="brand-card">
-                <span class="brand-kicker">Cashier & Inventory</span>
-                <div class="brand-title-row">
+                <div class="brand-kicker-row">
                     <img class="brand-logo" src="{{ url_for('static', filename='fruitsIcon.png') }}" alt="شعار النظام">
-                    <h1>{{ settings.company_name }}</h1>
+                    <span class="brand-kicker">Cashier & Inventory</span>
                 </div>
+                <h1>{{ settings.company_name }}</h1>
                 <p>نظام عربي محلي لإدارة الموردين والمبيعات والديون.</p>
                 <div class="brand-meta-stack">
                     {% for phone in phone_numbers %}

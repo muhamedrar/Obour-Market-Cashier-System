@@ -58,8 +58,13 @@
                 <input type="search" name="q" value="{{ search_query }}" placeholder="ابحث بالمورد أو الصنف أو الدرجة">
                 <input type="date" name="date_from" value="{{ date_from }}">
                 <input type="date" name="date_to" value="{{ date_to }}">
+                <select name="status">
+                    <option value="">كل الحالات</option>
+                    <option value="active" {{ 'selected' if status_filter == 'active' else '' }}>نشط</option>
+                    <option value="cleared" {{ 'selected' if status_filter == 'cleared' else '' }}>تمت التصفية</option>
+                </select>
                 <button class="btn btn-secondary" type="submit">بحث</button>
-                {% if search_query or date_from or date_to %}
+                {% if search_query or date_from or date_to or status_filter %}
                     <a class="btn btn-ghost" href="{{ url_for('suppliers.suppliers') }}">مسح</a>
                 {% endif %}
             </form>

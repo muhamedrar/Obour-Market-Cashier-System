@@ -93,6 +93,10 @@
                 <h3>ملخص المخزون</h3>
                 <p>يبين المتبقي الحالي حسب الصنف والدرجة.</p>
             </div>
+            <div class="inline-form">
+                <a class="btn btn-secondary" href="{{ url_for('admin.inventory_thermal_preview') }}">معاينة حرارية</a>
+                <a class="btn btn-primary" href="{{ url_for('admin.inventory_thermal_pdf') }}">تنزيل PDF حراري</a>
+            </div>
         </div>
         <div class="table-wrap records-scroll">
             <table>

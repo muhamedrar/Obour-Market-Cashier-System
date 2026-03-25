@@ -182,8 +182,6 @@ def retail_receipt(transaction_id: int):
             f"الشركة: {settings.company_name}",
             *[f"الهاتف: {phone}" for phone in split_phone_numbers(settings.phone_number)],
             f"التاريخ: {transaction.date.strftime('%Y-%m-%d %H:%M')}",
-            f"العمولة للوحدة: {transaction.commission_per_unit:.2f} ج.م",
-            f"المصروف الإداري: {transaction.admin_expense:.2f} ج.م",
         ],
         "table_headers": ["الصنف", "الدرجة", "الوحدات", "سعر الوحدة", "الإجمالي النهائي"],
         "table_rows": [
@@ -221,8 +219,6 @@ def retail_receipt_pdf(transaction_id: int):
             f"الشركة: {settings.company_name}",
             *[f"الهاتف: {phone}" for phone in split_phone_numbers(settings.phone_number)],
             f"التاريخ: {transaction.date.strftime('%Y-%m-%d %H:%M')}",
-            f"العمولة للوحدة: {transaction.commission_per_unit:.2f}",
-            f"المصروف الإداري: {transaction.admin_expense:.2f}",
         ],
         ["الصنف", "الدرجة", "الوحدات", "سعر الوحدة", "الإجمالي"],
         [[
