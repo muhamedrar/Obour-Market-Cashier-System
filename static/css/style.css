@@ -85,6 +85,22 @@ textarea {
     margin: 0 0 8px;
 }
 
+.brand-title-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 8px;
+}
+
+.brand-logo {
+    width: 48px;
+    height: 48px;
+    object-fit: contain;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.14);
+    padding: 6px;
+}
+
 .brand-card p,
 .panel-head p,
 .hero-panel p,

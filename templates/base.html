@@ -4,6 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ page_title or "نظام الكاشير" }} | {{ settings.company_name }}</title>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='fruitsIcon.png') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <script defer src="{{ url_for('static', filename='js/app.js') }}"></script>
 </head>
@@ -12,7 +13,10 @@
         <aside class="sidebar">
             <div class="brand-card">
                 <span class="brand-kicker">Cashier & Inventory</span>
-                <h1>{{ settings.company_name }}</h1>
+                <div class="brand-title-row">
+                    <img class="brand-logo" src="{{ url_for('static', filename='fruitsIcon.png') }}" alt="شعار النظام">
+                    <h1>{{ settings.company_name }}</h1>
+                </div>
                 <p>نظام عربي محلي لإدارة الموردين والمبيعات والديون.</p>
                 <div class="brand-meta-stack">
                     {% for phone in phone_numbers %}

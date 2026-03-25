@@ -151,6 +151,79 @@ def report_pdf():
     )
 
 
+@admin_bp.route("/reports/inventory-thermal")
+def inventory_thermal_preview():
+    db_session = get_session()
+    settings = get_or_create_settings(db_session)
+    inventory_rows = inventory_summary(db_session)
+
+    total_units = sum(int(row.remaining_units or 0) for row in inventory_rows)
+    total_value = sum(float(row.total_value or 0) for row in inventory_rows)
+
+    context = {
+        **build_base_context(db_session),
+        "page_title": "معاينة مخزون حرارية",
+        "report_title": "ملخص المخزون الحالي",
+        "report_subtitle": "معاينة حرارية سريعة للطباعة أو تنزيل PDF.",
+        "meta_lines": [
+            f"الشركة: {settings.company_name}",
+            *[f"الهاتف: {phone}" for phone in split_phone_numbers(settings.phone_number)],
+            f"تاريخ التقرير: {datetime.now().strftime('%Y-%m-%d %H:%M')}",
+        ],
+        "table_headers": ["الصنف", "الدرجة", "الوحدات", "القيمة"],
+        "table_rows": [
+            [
+                row.fruit_name,
+                row.class_number,
+                int(row.remaining_units or 0),
+                f"{float(row.total_value or 0):.2f}",
+            ]
+            for row in inventory_rows
+        ],
+        "summary_lines": [
+            ("عدد أصناف المخزون", len(inventory_rows)),
+            ("إجمالي الوحدات", total_units),
+            ("إجمالي قيمة المخزون", total_value),
+        ],
+        "download_url": url_for("admin.inventory_thermal_pdf"),
+        "print_mode": "thermal",
+    }
+    return render_template("print_preview.html", **context)
+
+
+@admin_bp.route("/reports/inventory-thermal/pdf")
+def inventory_thermal_pdf():
+    db_session = get_session()
+    settings = get_or_create_settings(db_session)
+    inventory_rows = inventory_summary(db_session)
+
+    pdf = build_pdf(
+        "ملخص المخزون الحالي",
+        [
+            f"الشركة: {settings.company_name}",
+            *[f"الهاتف: {phone}" for phone in split_phone_numbers(settings.phone_number)],
+            f"تاريخ التقرير: {datetime.now().strftime('%Y-%m-%d %H:%M')}",
+        ],
+        ["الصنف", "الدرجة", "الوحدات", "القيمة"],
+        [
+            [
+                row.fruit_name,
+                str(row.class_number),
+                str(int(row.remaining_units or 0)),
+                f"{float(row.total_value or 0):.2f}",
+            ]
+            for row in inventory_rows
+        ],
+        paper="thermal",
+    )
+    return send_file(
+        pdf,
+        as_attachment=True,
+        download_name="inventory-thermal.pdf",
+        mimetype="application/pdf",
+    )
+
+
 @admin_bp.route("/admin/login", methods=["GET", "POST"])
 def login():
     db_session = get_session()
