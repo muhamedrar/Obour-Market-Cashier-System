@@ -1,13 +1,15 @@
 :root {
-    --bg: #f5f1e8;
-    --bg-alt: #fffaf2;
-    --panel: rgba(255, 252, 247, 0.94);
-    --line: rgba(13, 63, 71, 0.12);
+    --bg: #edf6ee;
+    --bg-alt: #f8fcf8;
+    --panel: rgba(251, 255, 251, 0.94);
+    --line: rgba(20, 74, 55, 0.16);
     --text: #172126;
     --muted: #6f7e84;
-    --primary: #0c5b69;
-    --primary-dark: #093e49;
-    --accent: #d97941;
+    --primary: #1c7a4f;
+    --primary-dark: #0f5132;
+    --primary-soft: #cfe9d7;
+    --primary-glow: rgba(28, 122, 79, 0.22);
+    --accent: #4f996b;
     --danger: #b64932;
     --success: #1f7a53;
     --shadow: 0 22px 55px rgba(16, 34, 43, 0.12);
@@ -23,10 +25,7 @@ body {
     min-height: 100vh;
     color: var(--text);
     font-family: "Segoe UI", Tahoma, Arial, sans-serif;
-    background:
-        radial-gradient(circle at top right, rgba(217, 121, 65, 0.16), transparent 28%),
-        radial-gradient(circle at bottom left, rgba(12, 91, 105, 0.15), transparent 34%),
-        linear-gradient(135deg, #f6efe2 0%, #f4f7f3 48%, #f9f4eb 100%);
+    background: #edf6ee;
 }
 
 a {
@@ -71,7 +70,7 @@ textarea {
 .topbar-label,
 .eyebrow {
     display: inline-block;
-    color: var(--accent);
+    color: var(--primary);
     font-size: 0.85rem;
     letter-spacing: 0.08em;
     text-transform: uppercase;
@@ -121,6 +120,10 @@ textarea {
     color: rgba(248, 251, 251, 0.88);
 }
 
+.sidebar .brand-kicker {
+    color: #c8edd3;
+}
+
 .meta-pill {
     display: inline-flex;
     padding: 8px 14px;
@@ -155,7 +158,7 @@ textarea {
 
 .nav-links a:hover,
 .nav-links a.active {
-    background: rgba(217, 121, 65, 0.18);
+    background: rgba(79, 153, 107, 0.26);
     transform: translateX(-2px);
 }
 
@@ -205,7 +208,7 @@ textarea {
     padding: 24px 28px;
     margin-bottom: 20px;
     border-radius: var(--radius);
-    background: rgba(255, 250, 242, 0.84);
+    background: #cde6d4;
     backdrop-filter: blur(12px);
 }
 
@@ -236,7 +239,7 @@ textarea {
     gap: 22px;
     padding: 28px;
     border-radius: var(--radius);
-    background: linear-gradient(135deg, rgba(255, 251, 245, 0.92), rgba(225, 240, 236, 0.92));
+    background: #c4e0cc;
     margin-bottom: 20px;
 }
 
@@ -275,7 +278,7 @@ textarea {
 .panel {
     padding: 24px;
     border-radius: var(--radius);
-    background: var(--panel);
+    background: #d5ebda;
     backdrop-filter: blur(12px);
 }
 
@@ -287,6 +290,7 @@ textarea {
 
 .kpi-card strong {
     font-size: 1.7rem;
+    color: var(--primary-dark);
 }
 
 .panel-head {
@@ -333,17 +337,19 @@ select,
 textarea {
     width: 100%;
     padding: 13px 14px;
-    border: 1px solid rgba(12, 91, 105, 0.14);
+    border: 1px solid rgba(28, 122, 79, 0.22);
     border-radius: 16px;
-    background: rgba(255, 255, 255, 0.88);
+    background: rgba(255, 255, 255, 0.92);
     color: var(--text);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75);
 }
 
 input:focus,
 select:focus,
 textarea:focus {
-    outline: 2px solid rgba(217, 121, 65, 0.18);
-    border-color: rgba(217, 121, 65, 0.55);
+    outline: 2px solid rgba(28, 122, 79, 0.2);
+    border-color: rgba(28, 122, 79, 0.55);
+    box-shadow: 0 0 0 4px rgba(28, 122, 79, 0.12);
 }
 
 .form-actions,
@@ -355,6 +361,25 @@ textarea:focus {
     flex-wrap: wrap;
     align-items: center;
     gap: 10px;
+}
+
+.inline-form input,
+.inline-form select {
+    width: auto;
+    min-width: 140px;
+    max-width: 180px;
+    padding: 10px 12px;
+    border-radius: 12px;
+}
+
+.inline-form input[type="search"] {
+    min-width: 180px;
+    max-width: 240px;
+}
+
+.inline-form .btn {
+    padding: 10px 14px;
+    border-radius: 12px;
 }
 
 .btn {
@@ -373,18 +398,19 @@ textarea:focus {
 }
 
 .btn-primary {
-    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+    background: var(--primary);
     color: #fff;
+    box-shadow: 0 16px 30px rgba(15, 81, 50, 0.22);
 }
 
 .btn-secondary {
-    background: rgba(12, 91, 105, 0.1);
+    background: #cfe9d7;
     color: var(--primary-dark);
 }
 
 .btn-ghost {
-    background: rgba(217, 121, 65, 0.12);
-    color: #7b431d;
+    background: #e4f2e8;
+    color: var(--primary);
 }
 
 .btn-danger {
@@ -429,6 +455,7 @@ td {
 th {
     color: var(--primary-dark);
     font-weight: 700;
+    background: #deefe3;
 }
 
 .mini-list {
@@ -481,7 +508,7 @@ th {
     gap: 12px;
     padding: 10px 12px;
     border-radius: 14px;
-    background: rgba(12, 91, 105, 0.06);
+    background: #dceee2;
 }
 
 .mini-item {
@@ -489,7 +516,8 @@ th {
     gap: 6px;
     padding: 16px;
     border-radius: 18px;
-    background: rgba(12, 91, 105, 0.05);
+    background: #e4f3e8;
+    border: 1px solid rgba(28, 122, 79, 0.14);
 }
 
 .status {
@@ -497,7 +525,8 @@ th {
     padding: 6px 12px;
     border-radius: 999px;
     font-size: 0.88rem;
-    background: rgba(12, 91, 105, 0.08);
+    background: rgba(28, 122, 79, 0.16);
+    color: var(--primary-dark);
 }
 
 .status.paid {
@@ -524,7 +553,8 @@ th {
 .info-box {
     padding: 14px 16px;
     border-radius: 16px;
-    background: rgba(12, 91, 105, 0.06);
+    background: #e0f0e5;
+    border: 1px solid rgba(28, 122, 79, 0.14);
 }
 
 .login-shell {
