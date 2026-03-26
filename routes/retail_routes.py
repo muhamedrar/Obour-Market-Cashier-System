@@ -44,7 +44,11 @@ def retail():
             flash("حركة البيع غير موجودة.", "error")
             return redirect(url_for("retail.retail"))
 
-        discount_per_unit = parse_float(request.form.get("discount_per_unit"))
+        discount_per_unit = (
+            parse_float(request.form.get("discount_per_unit"))
+            if is_admin_user
+            else 0.0
+        )
         commission_per_unit = (
             parse_float(request.form.get("commission_per_unit"), settings.commission_per_unit)
             if is_admin_user

@@ -47,7 +47,11 @@ def special_retailers():
             flash("حركة التاجر غير موجودة.", "error")
             return redirect(url_for("special_retailers.special_retailers"))
 
-        discount_per_unit = parse_float(request.form.get("discount_per_unit"))
+        discount_per_unit = (
+            parse_float(request.form.get("discount_per_unit"))
+            if session.get("admin_logged_in")
+            else 0.0
+        )
         units_count = parse_int(request.form.get("units_count"))
         fruit_name = request.form.get("fruit_name", "").strip()
         class_number = request.form.get("class_number", "").strip()

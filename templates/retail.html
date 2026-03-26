@@ -48,11 +48,11 @@
                 <strong>سعر الوحدة من المورد</strong>
                 <span data-sale-price-display>{{ edit_transaction.original_price_per_unit|currency if edit_transaction else "يتم جلبه تلقائياً من بيانات المورد" }}</span>
             </div>
-            <label>
-                <span>الخصم للوحدة</span>
-                <input type="number" min="0" step="0.01" name="discount_per_unit" value="{{ edit_transaction.discount_per_unit if edit_transaction else 0 }}" required>
-            </label>
             {% if is_admin %}
+                <label>
+                    <span>الخصم للوحدة</span>
+                    <input type="number" min="0" step="0.01" name="discount_per_unit" value="{{ edit_transaction.discount_per_unit if edit_transaction else 0 }}" required>
+                </label>
                 <label>
                     <span>نوع تأثير الخصم</span>
                     <select name="discount_mode">
@@ -62,6 +62,7 @@
                     </select>
                 </label>
             {% else %}
+                <input type="hidden" name="discount_per_unit" value="0">
                 <input type="hidden" name="discount_mode" value="{{ edit_transaction.discount_mode if edit_transaction else 'commission' }}">
             {% endif %}
             {% if is_admin %}
