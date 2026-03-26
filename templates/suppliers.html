@@ -56,8 +56,8 @@
             </div>
             <form class="inline-form" method="get">
                 <input type="search" name="q" value="{{ search_query }}" placeholder="ابحث بالمورد أو الصنف أو الدرجة">
-                <input type="date" name="date_from" value="{{ date_from }}">
-                <input type="date" name="date_to" value="{{ date_to }}">
+                <input type="datetime-local" name="date_from" value="{{ date_from }}">
+                <input type="datetime-local" name="date_to" value="{{ date_to }}">
                 <select name="status">
                     <option value="">كل الحالات</option>
                     <option value="active" {{ 'selected' if status_filter == 'active' else '' }}>نشط</option>

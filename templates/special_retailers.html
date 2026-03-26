@@ -80,6 +80,14 @@
                 <h3>سجل تجار الآجل</h3>
                 <p>يمكن متابعة الرصيد المتبقي والحالة وإصدار إيصال محدث بعد كل دفعة.</p>
             </div>
+            <form class="inline-form" method="get">
+                <input type="datetime-local" name="date_from" value="{{ date_from }}">
+                <input type="datetime-local" name="date_to" value="{{ date_to }}">
+                <button class="btn btn-secondary" type="submit">تصفية</button>
+                {% if date_from or date_to %}
+                    <a class="btn btn-ghost" href="{{ url_for('special_retailers.special_retailers') }}">مسح</a>
+                {% endif %}
+            </form>
         </div>
         <div class="table-wrap records-scroll">
             <table>

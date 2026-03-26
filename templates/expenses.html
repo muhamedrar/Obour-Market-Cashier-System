@@ -38,6 +38,14 @@
                 <h3>سجل المصروفات</h3>
                 <p>مثل الإفطار والمشروبات والنقل وأي تكاليف يومية أخرى.</p>
             </div>
+            <form class="inline-form" method="get">
+                <input type="datetime-local" name="date_from" value="{{ date_from }}">
+                <input type="datetime-local" name="date_to" value="{{ date_to }}">
+                <button class="btn btn-secondary" type="submit">تصفية</button>
+                {% if date_from or date_to %}
+                    <a class="btn btn-ghost" href="{{ url_for('expenses.expenses') }}">مسح</a>
+                {% endif %}
+            </form>
         </div>
         <div class="table-wrap records-scroll">
             <table>

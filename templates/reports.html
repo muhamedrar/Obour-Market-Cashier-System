@@ -5,12 +5,18 @@
     <div>
         <span class="eyebrow">تقارير شاملة</span>
         <h3>ملخص المخزون والمبيعات وصافي الإيراد</h3>
-        <p>هذه الصفحة نفسها هي المعاينة قبل الطباعة أو تنزيل PDF.</p>
+        <p>هذه الصفحة نفسها هي المعاينة قبل الطباعة أو تنزيل PDF. {{ period_label }}</p>
     </div>
-    <div class="inline-form">
+    <form class="inline-form" method="get">
+        <input type="datetime-local" name="date_from" value="{{ date_from }}">
+        <input type="datetime-local" name="date_to" value="{{ date_to }}">
+        <button class="btn btn-secondary" type="submit">تصفية</button>
+        {% if date_from or date_to %}
+            <a class="btn btn-ghost" href="{{ url_for('admin.reports') }}">مسح</a>
+        {% endif %}
         <button class="btn btn-secondary" type="button" onclick="window.print()">طباعة المعاينة</button>
-        <a class="btn btn-primary" href="{{ url_for('admin.report_pdf') }}">تنزيل PDF</a>
-    </div>
+        <a class="btn btn-primary" href="{{ url_for('admin.report_pdf', date_from=date_from or None, date_to=date_to or None) }}">تنزيل PDF</a>
+    </form>
 </section>
 
 <section class="panel">
@@ -94,8 +100,8 @@
                 <p>يبين المتبقي الحالي حسب الصنف والدرجة.</p>
             </div>
             <div class="inline-form">
-                <a class="btn btn-secondary" href="{{ url_for('admin.inventory_thermal_preview') }}">معاينة حرارية</a>
-                <a class="btn btn-primary" href="{{ url_for('admin.inventory_thermal_pdf') }}">تنزيل PDF حراري</a>
+                <a class="btn btn-secondary" href="{{ url_for('admin.inventory_thermal_preview', date_from=date_from or None, date_to=date_to or None) }}">معاينة حرارية</a>
+                <a class="btn btn-primary" href="{{ url_for('admin.inventory_thermal_pdf', date_from=date_from or None, date_to=date_to or None) }}">تنزيل PDF حراري</a>
             </div>
         </div>
         <div class="table-wrap records-scroll">

@@ -5,6 +5,7 @@ from models.special_retailer import SpecialRetailer
 from utils.helpers import (
     admin_required,
     allocate_inventory_fifo,
+    apply_date_range,
     available_goods,
     build_base_context,
     calculate_sale_totals,
@@ -122,11 +123,16 @@ def special_retailers():
     if edit_id:
         edit_retailer = db_session.get(SpecialRetailer, edit_id)
 
-    retailers = (
-        db_session.query(SpecialRetailer)
-        .order_by(SpecialRetailer.date.desc(), SpecialRetailer.id.desc())
-        .all()
+    date_from = request.args.get("date_from", "").strip()
+    date_to = request.args.get("date_to", "").strip()
+    retailers_query = db_session.query(SpecialRetailer)
+    retailers_query = apply_date_range(
+        retailers_query,
+        SpecialRetailer.date,
+        date_from or None,
+        date_to or None,
     )
+    retailers = retailers_query.order_by(SpecialRetailer.date.desc(), SpecialRetailer.id.desc()).all()
     goods = available_goods(db_session)
     stock_options = [
         {
@@ -145,6 +151,8 @@ def special_retailers():
         "default_commission": settings.commission_per_unit,
         "default_admin_expense": settings.admin_expense,
         "stock_options": stock_options,
+        "date_from": date_from,
+        "date_to": date_to,
     }
     return render_template("special_retailers.html", **context)
 

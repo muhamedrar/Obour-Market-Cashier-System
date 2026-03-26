@@ -136,8 +136,8 @@
                 <p>الفاتورة تشمل العمولة والمصروف الإداري بعد الخصومات اليدوية.</p>
             </div>
             <form class="inline-form" method="get">
-                <input type="date" name="date_from" value="{{ date_from }}">
-                <input type="date" name="date_to" value="{{ date_to }}">
+                <input type="datetime-local" name="date_from" value="{{ date_from }}">
+                <input type="datetime-local" name="date_to" value="{{ date_to }}">
                 <button class="btn btn-secondary" type="submit">تصفية</button>
                 {% if date_from or date_to %}
                     <a class="btn btn-ghost" href="{{ url_for('retail.retail') }}">مسح</a>

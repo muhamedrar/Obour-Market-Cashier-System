@@ -5,9 +5,23 @@
     <div>
         <span class="eyebrow">نظرة سريعة على اليوم</span>
         <h3>تحكم في المخزون والمبيعات من شاشة واحدة</h3>
-        <p>المؤشرات التالية محدثة مباشرة من الحركات اليومية والمصروفات والديون.</p>
+        <p>المؤشرات التالية محدثة مباشرة من الحركات اليومية والمصروفات والديون. {{ period_label }}</p>
     </div>
-    <a class="btn btn-primary" href="{{ url_for('admin.reports') }}">فتح التقارير</a>
+    <form class="inline-form" method="get">
+        <input type="datetime-local" name="date_from" value="{{ date_from }}">
+        <input type="datetime-local" name="date_to" value="{{ date_to }}">
+        <select name="fruit">
+            <option value="">كل الأصناف</option>
+            {% for fruit in fruit_options %}
+                <option value="{{ fruit }}" {% if selected_fruit == fruit %}selected{% endif %}>{{ fruit }}</option>
+            {% endfor %}
+        </select>
+        <button class="btn btn-secondary" type="submit">تصفية</button>
+        {% if date_from or date_to or selected_fruit %}
+            <a class="btn btn-ghost" href="{{ url_for('admin.dashboard') }}">مسح</a>
+        {% endif %}
+        <a class="btn btn-primary" href="{{ url_for('admin.reports', date_from=date_from or None, date_to=date_to or None) }}">فتح التقارير</a>
+    </form>
 </section>
 
 <section class="kpi-grid">
@@ -44,15 +58,6 @@
                 <h3>ملخص المخزون الحالي</h3>
                 <p>يمكنك التصفية حسب الصنف لمعرفة المتبقي بشكل أسرع.</p>
             </div>
-            <form class="inline-form" method="get">
-                <select name="fruit">
-                    <option value="">كل الأصناف</option>
-                    {% for fruit in fruit_options %}
-                        <option value="{{ fruit }}" {% if selected_fruit == fruit %}selected{% endif %}>{{ fruit }}</option>
-                    {% endfor %}
-                </select>
-                <button class="btn btn-secondary" type="submit">تصفية</button>
-            </form>
         </div>
         <div class="table-wrap records-scroll">
             <table>

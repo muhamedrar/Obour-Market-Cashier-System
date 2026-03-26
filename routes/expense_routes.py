@@ -4,6 +4,7 @@ from models import get_session
 from models.expense import Expense
 from utils.helpers import (
     admin_required,
+    apply_date_range,
     build_base_context,
     parse_date,
     parse_float,
@@ -47,12 +48,18 @@ def expenses():
     if edit_id:
         edit_expense = db_session.get(Expense, edit_id)
 
-    expenses_list = db_session.query(Expense).order_by(Expense.date.desc(), Expense.id.desc()).all()
+    date_from = request.args.get("date_from", "").strip()
+    date_to = request.args.get("date_to", "").strip()
+    expenses_query = db_session.query(Expense)
+    expenses_query = apply_date_range(expenses_query, Expense.date, date_from or None, date_to or None)
+    expenses_list = expenses_query.order_by(Expense.date.desc(), Expense.id.desc()).all()
     context = {
         **build_base_context(db_session),
         "page_title": "المصروفات",
         "expenses_list": expenses_list,
         "edit_expense": edit_expense,
+        "date_from": date_from,
+        "date_to": date_to,
     }
     return render_template("expenses.html", **context)
 

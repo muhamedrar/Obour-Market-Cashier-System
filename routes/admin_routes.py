@@ -20,8 +20,10 @@ from models.special_retailer import SpecialRetailer
 from models.supplier import Supplier
 from utils.helpers import (
     admin_required,
+    apply_date_range,
     build_base_context,
     dashboard_metrics,
+    filtered_period_label,
     get_or_create_settings,
     hash_password,
     inventory_summary,
@@ -41,33 +43,46 @@ admin_bp = Blueprint("admin", __name__)
 @admin_bp.route("/dashboard")
 def dashboard():
     db_session = get_session()
+    date_from = request.args.get("date_from", "").strip()
+    date_to = request.args.get("date_to", "").strip()
     selected_fruit = request.args.get("fruit", "").strip() or None
-    fruits = db_session.scalars(
-        select(Supplier.fruit_name).distinct().order_by(Supplier.fruit_name.asc())
-    ).all()
+    fruits_query = db_session.query(Supplier.fruit_name).distinct().order_by(Supplier.fruit_name.asc())
+    fruits_query = apply_date_range(fruits_query, Supplier.date, date_from or None, date_to or None)
+    fruits = [row[0] for row in fruits_query.all()]
 
-    recent_retail = (
-        db_session.query(RetailTransaction)
-        .order_by(RetailTransaction.date.desc(), RetailTransaction.id.desc())
-        .limit(5)
-        .all()
+    recent_retail_query = db_session.query(RetailTransaction)
+    recent_retail_query = apply_date_range(
+        recent_retail_query,
+        RetailTransaction.date,
+        date_from or None,
+        date_to or None,
     )
-    recent_debt = (
-        db_session.query(SpecialRetailer)
-        .order_by(SpecialRetailer.date.desc(), SpecialRetailer.id.desc())
-        .limit(5)
-        .all()
+    recent_retail = recent_retail_query.order_by(
+        RetailTransaction.date.desc(), RetailTransaction.id.desc()
+    ).limit(5).all()
+    recent_debt_query = db_session.query(SpecialRetailer)
+    recent_debt_query = apply_date_range(
+        recent_debt_query,
+        SpecialRetailer.date,
+        date_from or None,
+        date_to or None,
     )
+    recent_debt = recent_debt_query.order_by(
+        SpecialRetailer.date.desc(), SpecialRetailer.id.desc()
+    ).limit(5).all()
 
     context = {
         **build_base_context(db_session),
         "page_title": "لوحة التحكم",
-        "metrics": dashboard_metrics(db_session),
-        "inventory_rows": inventory_summary(db_session, selected_fruit),
+        "metrics": dashboard_metrics(db_session, date_from or None, date_to or None),
+        "inventory_rows": inventory_summary(db_session, selected_fruit, date_from or None, date_to or None),
         "fruit_options": fruits,
         "selected_fruit": selected_fruit or "",
         "recent_retail": recent_retail,
         "recent_debt": recent_debt,
+        "date_from": date_from,
+        "date_to": date_to,
+        "period_label": filtered_period_label(date_from or None, date_to or None),
     }
     return render_template("dashboard.html", **context)
 
@@ -75,15 +90,20 @@ def dashboard():
 @admin_bp.route("/reports")
 def reports():
     db_session = get_session()
-    inventory_rows = inventory_summary(db_session)
-    sold_rows = sold_units_summary(db_session)
-    breakdown = revenue_breakdown(db_session)
+    date_from = request.args.get("date_from", "").strip()
+    date_to = request.args.get("date_to", "").strip()
+    inventory_rows = inventory_summary(db_session, date_from=date_from or None, date_to=date_to or None)
+    sold_rows = sold_units_summary(db_session, date_from or None, date_to or None)
+    breakdown = revenue_breakdown(db_session, date_from or None, date_to or None)
     context = {
         **build_base_context(db_session),
         "page_title": "التقارير",
         "inventory_rows": inventory_rows,
         "sold_rows": sold_rows,
         "breakdown": breakdown,
+        "date_from": date_from,
+        "date_to": date_to,
+        "period_label": filtered_period_label(date_from or None, date_to or None),
     }
     return render_template("reports.html", **context)
 
@@ -92,9 +112,12 @@ def reports():
 def report_pdf():
     db_session = get_session()
     settings = get_or_create_settings(db_session)
-    inventory_rows = inventory_summary(db_session)
-    sold_rows = sold_units_summary(db_session)
-    breakdown = revenue_breakdown(db_session)
+    date_from = request.args.get("date_from", "").strip()
+    date_to = request.args.get("date_to", "").strip()
+    period_label = filtered_period_label(date_from or None, date_to or None)
+    inventory_rows = inventory_summary(db_session, date_from=date_from or None, date_to=date_to or None)
+    sold_rows = sold_units_summary(db_session, date_from or None, date_to or None)
+    breakdown = revenue_breakdown(db_session, date_from or None, date_to or None)
 
     rows = []
     for row in inventory_rows:
@@ -139,6 +162,7 @@ def report_pdf():
             f"الشركة: {settings.company_name}",
             *[f"الهاتف: {phone}" for phone in split_phone_numbers(settings.phone_number)],
             f"تاريخ التقرير: {datetime.now().strftime('%Y-%m-%d %H:%M')}",
+            period_label,
         ],
         ["البيان", "الدرجة", "الوحدات", "السعر", "الإجمالي"],
         rows,
@@ -155,7 +179,10 @@ def report_pdf():
 def inventory_thermal_preview():
     db_session = get_session()
     settings = get_or_create_settings(db_session)
-    inventory_rows = inventory_summary(db_session)
+    date_from = request.args.get("date_from", "").strip()
+    date_to = request.args.get("date_to", "").strip()
+    period_label = filtered_period_label(date_from or None, date_to or None)
+    inventory_rows = inventory_summary(db_session, date_from=date_from or None, date_to=date_to or None)
 
     total_units = sum(int(row.remaining_units or 0) for row in inventory_rows)
     total_value = sum(float(row.total_value or 0) for row in inventory_rows)
@@ -169,6 +196,7 @@ def inventory_thermal_preview():
             f"الشركة: {settings.company_name}",
             *[f"الهاتف: {phone}" for phone in split_phone_numbers(settings.phone_number)],
             f"تاريخ التقرير: {datetime.now().strftime('%Y-%m-%d %H:%M')}",
+            period_label,
         ],
         "table_headers": ["الصنف", "الدرجة", "الوحدات", "القيمة"],
         "table_rows": [
@@ -185,7 +213,11 @@ def inventory_thermal_preview():
             ("إجمالي الوحدات", total_units),
             ("إجمالي قيمة المخزون", total_value),
         ],
-        "download_url": url_for("admin.inventory_thermal_pdf"),
+        "download_url": url_for(
+            "admin.inventory_thermal_pdf",
+            date_from=date_from or None,
+            date_to=date_to or None,
+        ),
         "print_mode": "thermal",
     }
     return render_template("print_preview.html", **context)
@@ -195,7 +227,10 @@ def inventory_thermal_preview():
 def inventory_thermal_pdf():
     db_session = get_session()
     settings = get_or_create_settings(db_session)
-    inventory_rows = inventory_summary(db_session)
+    date_from = request.args.get("date_from", "").strip()
+    date_to = request.args.get("date_to", "").strip()
+    period_label = filtered_period_label(date_from or None, date_to or None)
+    inventory_rows = inventory_summary(db_session, date_from=date_from or None, date_to=date_to or None)
 
     pdf = build_pdf(
         "ملخص المخزون الحالي",
@@ -203,6 +238,7 @@ def inventory_thermal_pdf():
             f"الشركة: {settings.company_name}",
             *[f"الهاتف: {phone}" for phone in split_phone_numbers(settings.phone_number)],
             f"تاريخ التقرير: {datetime.now().strftime('%Y-%m-%d %H:%M')}",
+            period_label,
         ],
         ["الصنف", "الدرجة", "الوحدات", "القيمة"],
         [

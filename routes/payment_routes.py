@@ -6,6 +6,7 @@ from models.payment import Payment
 from models.special_retailer import SpecialRetailer
 from utils.helpers import (
     admin_required,
+    apply_date_range,
     build_base_context,
     parse_date,
     parse_float,
@@ -81,21 +82,45 @@ def payments():
     if retailer_query_id:
         selected_retailer = db_session.get(SpecialRetailer, retailer_query_id)
 
-    retailers = (
+    date_from = request.args.get("date_from", "").strip()
+    date_to = request.args.get("date_to", "").strip()
+
+    retailer_options = (
         db_session.query(SpecialRetailer)
         .order_by(SpecialRetailer.remaining_balance.desc(), SpecialRetailer.date.desc())
         .all()
     )
-    payments_list = (
-        db_session.query(Payment).order_by(Payment.payment_date.desc(), Payment.id.desc()).all()
+    retailers_list_query = db_session.query(SpecialRetailer)
+    retailers_list_query = apply_date_range(
+        retailers_list_query,
+        SpecialRetailer.date,
+        date_from or None,
+        date_to or None,
     )
+    retailers_list = retailers_list_query.order_by(
+        SpecialRetailer.remaining_balance.desc(),
+        SpecialRetailer.date.desc(),
+    ).all()
+    payments_query = db_session.query(Payment)
+    payments_query = apply_date_range(
+        payments_query,
+        Payment.payment_date,
+        date_from or None,
+        date_to or None,
+    )
+    if retailer_query_id:
+        payments_query = payments_query.filter(Payment.retailer_id == retailer_query_id)
+    payments_list = payments_query.order_by(Payment.payment_date.desc(), Payment.id.desc()).all()
     context = {
         **build_base_context(db_session),
         "page_title": "الدفعات",
-        "retailers": retailers,
+        "retailer_options": retailer_options,
+        "retailers_list": retailers_list,
         "payments_list": payments_list,
         "selected_retailer": selected_retailer,
         "edit_payment": edit_payment,
+        "date_from": date_from,
+        "date_to": date_to,
     }
     return render_template("payments.html", **context)
 

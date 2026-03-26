@@ -17,6 +17,22 @@ from models.special_retailer import SpecialRetailer
 from models.supplier import Supplier
 
 
+def parse_filter_datetime(value: str | None, end_of_day: bool = False) -> datetime | None:
+    if not value:
+        return None
+
+    normalized = value.strip().replace("T", " ")
+    for fmt in ("%Y-%m-%d %H:%M", "%Y-%m-%d %H:%M:%S", "%Y-%m-%d"):
+        try:
+            parsed = datetime.strptime(normalized, fmt)
+            if fmt == "%Y-%m-%d":
+                return datetime.combine(parsed.date(), time.max if end_of_day else time.min)
+            return parsed
+        except ValueError:
+            continue
+    return None
+
+
 def parse_date(value: str | None) -> datetime:
     if value:
         normalized = value.replace("T", " ")
@@ -235,7 +251,12 @@ def today_metrics(db_session):
     return dashboard_metrics(db_session)
 
 
-def inventory_summary(db_session, fruit_name: str | None = None):
+def inventory_summary(
+    db_session,
+    fruit_name: str | None = None,
+    date_from: str | None = None,
+    date_to: str | None = None,
+):
     query = (
         db_session.query(
             Supplier.fruit_name,
@@ -250,10 +271,11 @@ def inventory_summary(db_session, fruit_name: str | None = None):
     )
     if fruit_name:
         query = query.filter(Supplier.fruit_name == fruit_name)
+    query = apply_date_range(query, Supplier.date, date_from, date_to)
     return query.all()
 
 
-def sold_units_summary(db_session):
+def sold_units_summary(db_session, date_from: str | None = None, date_to: str | None = None):
     retail_rows = (
         db_session.query(
             RetailTransaction.fruit_name.label("fruit_name"),
@@ -261,9 +283,9 @@ def sold_units_summary(db_session):
             func.sum(RetailTransaction.units_count).label("units_count"),
             func.sum(RetailTransaction.final_price).label("revenue"),
         )
-        .group_by(RetailTransaction.fruit_name, RetailTransaction.class_number)
-        .all()
     )
+    retail_rows = apply_date_range(retail_rows, RetailTransaction.date, date_from, date_to)
+    retail_rows = retail_rows.group_by(RetailTransaction.fruit_name, RetailTransaction.class_number).all()
     debt_rows = (
         db_session.query(
             SpecialRetailer.fruit_name.label("fruit_name"),
@@ -271,9 +293,9 @@ def sold_units_summary(db_session):
             func.sum(SpecialRetailer.units_count).label("units_count"),
             func.sum(SpecialRetailer.total_price).label("revenue"),
         )
-        .group_by(SpecialRetailer.fruit_name, SpecialRetailer.class_number)
-        .all()
     )
+    debt_rows = apply_date_range(debt_rows, SpecialRetailer.date, date_from, date_to)
+    debt_rows = debt_rows.group_by(SpecialRetailer.fruit_name, SpecialRetailer.class_number).all()
 
     merged = {}
     for row in [*retail_rows, *debt_rows]:
@@ -303,59 +325,83 @@ def payment_total_for_retailer(db_session, retailer_id: int) -> float:
     return round(total or 0, 2)
 
 
-def received_payments_total(db_session) -> float:
-    total = db_session.scalar(select(func.coalesce(func.sum(Payment.amount_paid), 0)))
+def received_payments_total(
+    db_session,
+    date_from: str | None = None,
+    date_to: str | None = None,
+) -> float:
+    query = select(func.coalesce(func.sum(Payment.amount_paid), 0))
+    query = apply_date_range(query, Payment.payment_date, date_from, date_to)
+    total = db_session.scalar(query)
     return round(float(total or 0), 2)
 
 
-def supplier_cost_total(db_session) -> float:
-    total = db_session.scalar(
-        select(func.coalesce(func.sum(InventoryAllocation.units_count * Supplier.price_per_unit), 0))
-        .select_from(InventoryAllocation)
-        .join(Supplier, Supplier.id == InventoryAllocation.supplier_id)
+def supplier_cost_total(
+    db_session,
+    date_from: str | None = None,
+    date_to: str | None = None,
+) -> float:
+    retail_query = select(
+        func.coalesce(func.sum(RetailTransaction.original_price_per_unit * RetailTransaction.units_count), 0)
     )
-    return round(float(total or 0), 2)
+    retail_query = apply_date_range(retail_query, RetailTransaction.date, date_from, date_to)
+    debt_query = select(
+        func.coalesce(func.sum(SpecialRetailer.original_price_per_unit * SpecialRetailer.units_count), 0)
+    )
+    debt_query = apply_date_range(debt_query, SpecialRetailer.date, date_from, date_to)
+    total = float(db_session.scalar(retail_query) or 0) + float(db_session.scalar(debt_query) or 0)
+    return round(total, 2)
 
 
-def revenue_breakdown(db_session):
-    retail_commission_total = db_session.scalar(
-        select(
-            func.coalesce(
-                func.sum(RetailTransaction.commission_per_unit * RetailTransaction.units_count),
-                0,
-            )
+def revenue_breakdown(db_session, date_from: str | None = None, date_to: str | None = None):
+    retail_commission_query = select(
+        func.coalesce(
+            func.sum(RetailTransaction.commission_per_unit * RetailTransaction.units_count),
+            0,
         )
-    ) or 0
-    debt_commission_total = db_session.scalar(
-        select(
-            func.coalesce(
-                func.sum(SpecialRetailer.commission_per_unit * SpecialRetailer.units_count),
-                0,
-            )
+    )
+    retail_commission_query = apply_date_range(
+        retail_commission_query,
+        RetailTransaction.date,
+        date_from,
+        date_to,
+    )
+    retail_commission_total = db_session.scalar(retail_commission_query) or 0
+    debt_commission_query = select(
+        func.coalesce(
+            func.sum(SpecialRetailer.commission_per_unit * SpecialRetailer.units_count),
+            0,
         )
-    ) or 0
+    )
+    debt_commission_query = apply_date_range(
+        debt_commission_query,
+        SpecialRetailer.date,
+        date_from,
+        date_to,
+    )
+    debt_commission_total = db_session.scalar(debt_commission_query) or 0
     commission_total = float(retail_commission_total) + float(debt_commission_total)
 
-    retail_admin_total = db_session.scalar(
-        select(func.coalesce(func.sum(RetailTransaction.admin_expense), 0))
-    ) or 0
-    debt_admin_total = db_session.scalar(
-        select(func.coalesce(func.sum(SpecialRetailer.admin_expense), 0))
-    ) or 0
+    retail_admin_query = select(func.coalesce(func.sum(RetailTransaction.admin_expense), 0))
+    retail_admin_query = apply_date_range(retail_admin_query, RetailTransaction.date, date_from, date_to)
+    retail_admin_total = db_session.scalar(retail_admin_query) or 0
+    debt_admin_query = select(func.coalesce(func.sum(SpecialRetailer.admin_expense), 0))
+    debt_admin_query = apply_date_range(debt_admin_query, SpecialRetailer.date, date_from, date_to)
+    debt_admin_total = db_session.scalar(debt_admin_query) or 0
     admin_fees_total = float(retail_admin_total) + float(debt_admin_total)
-    other_expenses_total = db_session.scalar(
-        select(func.coalesce(func.sum(Expense.amount), 0))
-    ) or 0
-    debt_total = db_session.scalar(
-        select(func.coalesce(func.sum(SpecialRetailer.total_price), 0))
-    ) or 0
-    supplier_costs = supplier_cost_total(db_session)
-    debt_paid_total = received_payments_total(db_session)
-    sales_count = (
-        db_session.scalar(select(func.count(RetailTransaction.id))) or 0
-    ) + (
-        db_session.scalar(select(func.count(SpecialRetailer.id))) or 0
-    )
+    expenses_query = select(func.coalesce(func.sum(Expense.amount), 0))
+    expenses_query = apply_date_range(expenses_query, Expense.date, date_from, date_to)
+    other_expenses_total = db_session.scalar(expenses_query) or 0
+    debt_total_query = select(func.coalesce(func.sum(SpecialRetailer.total_price), 0))
+    debt_total_query = apply_date_range(debt_total_query, SpecialRetailer.date, date_from, date_to)
+    debt_total = db_session.scalar(debt_total_query) or 0
+    supplier_costs = supplier_cost_total(db_session, date_from, date_to)
+    debt_paid_total = received_payments_total(db_session, date_from, date_to)
+    retail_count_query = select(func.count(RetailTransaction.id))
+    retail_count_query = apply_date_range(retail_count_query, RetailTransaction.date, date_from, date_to)
+    debt_count_query = select(func.count(SpecialRetailer.id))
+    debt_count_query = apply_date_range(debt_count_query, SpecialRetailer.date, date_from, date_to)
+    sales_count = (db_session.scalar(retail_count_query) or 0) + (db_session.scalar(debt_count_query) or 0)
 
     total_revenue = round(
         float(commission_total) + float(admin_fees_total) + supplier_costs + float(debt_total),
@@ -381,16 +427,16 @@ def revenue_breakdown(db_session):
     }
 
 
-def dashboard_metrics(db_session):
-    breakdown = revenue_breakdown(db_session)
-    outstanding = db_session.scalar(
-        select(func.coalesce(func.sum(SpecialRetailer.remaining_balance), 0)).where(
-            SpecialRetailer.remaining_balance > 0
-        )
-    ) or 0
-    active_suppliers = db_session.scalar(
-        select(func.count(Supplier.id)).where(Supplier.remaining_units > 0)
-    ) or 0
+def dashboard_metrics(db_session, date_from: str | None = None, date_to: str | None = None):
+    breakdown = revenue_breakdown(db_session, date_from, date_to)
+    outstanding_query = select(func.coalesce(func.sum(SpecialRetailer.remaining_balance), 0)).where(
+        SpecialRetailer.remaining_balance > 0
+    )
+    outstanding_query = apply_date_range(outstanding_query, SpecialRetailer.date, date_from, date_to)
+    outstanding = db_session.scalar(outstanding_query) or 0
+    active_suppliers_query = select(func.count(Supplier.id)).where(Supplier.remaining_units > 0)
+    active_suppliers_query = apply_date_range(active_suppliers_query, Supplier.date, date_from, date_to)
+    active_suppliers = db_session.scalar(active_suppliers_query) or 0
 
     return {
         **breakdown,
@@ -508,8 +554,24 @@ def split_phone_numbers(value: str | None) -> list[str]:
 
 
 def apply_date_range(query, column, date_from: str | None, date_to: str | None):
-    if date_from:
-        query = query.filter(column >= datetime.combine(datetime.strptime(date_from, "%Y-%m-%d").date(), time.min))
-    if date_to:
-        query = query.filter(column <= datetime.combine(datetime.strptime(date_to, "%Y-%m-%d").date(), time.max))
+    start = parse_filter_datetime(date_from, end_of_day=False)
+    end = parse_filter_datetime(date_to, end_of_day=True)
+    if start:
+        criterion = column >= start
+        query = query.filter(criterion) if hasattr(query, "filter") else query.where(criterion)
+    if end:
+        criterion = column <= end
+        query = query.filter(criterion) if hasattr(query, "filter") else query.where(criterion)
     return query
+
+
+def filtered_period_label(date_from: str | None, date_to: str | None) -> str:
+    start = parse_filter_datetime(date_from, end_of_day=False)
+    end = parse_filter_datetime(date_to, end_of_day=True)
+    if start and end:
+        return f"الفترة: {start.strftime('%Y-%m-%d %H:%M')} إلى {end.strftime('%Y-%m-%d %H:%M')}"
+    if start:
+        return f"الفترة من: {start.strftime('%Y-%m-%d %H:%M')}"
+    if end:
+        return f"الفترة حتى: {end.strftime('%Y-%m-%d %H:%M')}"
+    return "الفترة: كل البيانات"

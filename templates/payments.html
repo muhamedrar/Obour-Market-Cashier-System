@@ -15,7 +15,7 @@
                 <span>اختر التاجر</span>
                 <select name="retailer_id" required>
                     <option value="">اختر التاجر</option>
-                    {% for retailer in retailers %}
+                    {% for retailer in retailer_options %}
                         {% set selected_id = edit_payment.retailer_id if edit_payment else (selected_retailer.id if selected_retailer else 0) %}
                         <option value="{{ retailer.id }}" {% if selected_id == retailer.id %}selected{% endif %}>
                             {{ retailer.retailer_name }} | متبقي {{ retailer.remaining_balance|currency }}
@@ -55,10 +55,19 @@
                 <h3>التجار والأرصدة الحالية</h3>
                 <p>اضغط على أي تاجر لفتح صفحة الدفعات الخاصة به مباشرة.</p>
             </div>
+            <form class="inline-form" method="get">
+                <input type="hidden" name="retailer" value="{{ selected_retailer.id if selected_retailer else '' }}">
+                <input type="datetime-local" name="date_from" value="{{ date_from }}">
+                <input type="datetime-local" name="date_to" value="{{ date_to }}">
+                <button class="btn btn-secondary" type="submit">تصفية</button>
+                {% if date_from or date_to or selected_retailer %}
+                    <a class="btn btn-ghost" href="{{ url_for('payments.payments') }}">مسح</a>
+                {% endif %}
+            </form>
         </div>
         <div class="mini-list records-scroll-list">
-            {% for retailer in retailers %}
-                <a class="mini-item" href="{{ url_for('payments.payments', retailer=retailer.id) }}">
+            {% for retailer in retailers_list %}
+                <a class="mini-item" href="{{ url_for('payments.payments', retailer=retailer.id, date_from=date_from or None, date_to=date_to or None) }}">
                     <strong>{{ retailer.retailer_name }}</strong>
                     <span>
                         {{ "مدفوع" if retailer.status == "paid" else ("مدفوع جزئياً" if retailer.status == "partial" else "غير مدفوع") }}
@@ -77,6 +86,15 @@
                 <h3>سجل الدفعات</h3>
                 <p>يتم تحديث إجمالي المدفوع والرصيد المتبقي فوراً بعد كل دفعة.</p>
             </div>
+            <form class="inline-form" method="get">
+                <input type="hidden" name="retailer" value="{{ selected_retailer.id if selected_retailer else '' }}">
+                <input type="datetime-local" name="date_from" value="{{ date_from }}">
+                <input type="datetime-local" name="date_to" value="{{ date_to }}">
+                <button class="btn btn-secondary" type="submit">تصفية</button>
+                {% if date_from or date_to or selected_retailer %}
+                    <a class="btn btn-ghost" href="{{ url_for('payments.payments') }}">مسح</a>
+                {% endif %}
+            </form>
         </div>
         <div class="table-wrap records-scroll">
             <table>
