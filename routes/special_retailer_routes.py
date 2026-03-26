@@ -9,8 +9,10 @@ from utils.helpers import (
     available_goods,
     build_base_context,
     calculate_sale_totals,
+    effective_commission_per_unit,
     get_fifo_quote,
     get_or_create_settings,
+    normalize_discount_mode,
     parse_date,
     parse_float,
     parse_int,
@@ -50,6 +52,11 @@ def special_retailers():
         fruit_name = request.form.get("fruit_name", "").strip()
         class_number = request.form.get("class_number", "").strip()
         retailer_name = request.form.get("retailer_name", "").strip()
+        discount_mode = (
+            normalize_discount_mode(request.form.get("discount_mode"))
+            if session.get("admin_logged_in")
+            else "commission"
+        )
 
         if not retailer_name or not fruit_name or not class_number or units_count <= 0:
             flash("يرجى إدخال اسم التاجر والصنف والدرجة وعدد الوحدات.", "error")
@@ -64,7 +71,11 @@ def special_retailers():
             flash(quote["message"], "error")
             return redirect(url_for("special_retailers.special_retailers"))
 
-        if discount_per_unit > quote["average_price_per_unit"]:
+        if discount_mode == "commission" and discount_per_unit > settings.commission_per_unit:
+            db_session.rollback()
+            flash("الخصم للوحدة لا يمكن أن يكون أكبر من العمولة للوحدة لأنه يُخصم منها مباشرة.", "error")
+            return redirect(url_for("special_retailers.special_retailers"))
+        if discount_mode == "unit_price" and discount_per_unit > quote["average_price_per_unit"]:
             db_session.rollback()
             flash("الخصم للوحدة لا يمكن أن يكون أكبر من سعر الوحدة القادم من المخزون.", "error")
             return redirect(url_for("special_retailers.special_retailers"))
@@ -75,6 +86,7 @@ def special_retailers():
             discount_per_unit,
             settings.commission_per_unit,
             settings.admin_expense,
+            discount_mode,
         )
 
         existing_paid = payment_total_for_retailer(db_session, retailer_id) if retailer_id else 0.0
@@ -90,6 +102,7 @@ def special_retailers():
         retailer.class_number = class_number
         retailer.original_price_per_unit = original_price
         retailer.discount_per_unit = discount_per_unit
+        retailer.discount_mode = discount_mode
         retailer.price_per_unit = price_per_unit
         retailer.commission_per_unit = settings.commission_per_unit
         retailer.admin_expense = settings.admin_expense
@@ -202,7 +215,25 @@ def special_retailer_receipt(retailer_id: int):
             f"{retailer.total_price:.2f}",
         ]],
         "summary_lines": [
+            ("نوع الخصم", "من العمولة" if retailer.discount_mode == "commission" else "من سعر الوحدة"),
+            (
+                "قيمة البضاعة" if retailer.discount_mode == "commission" else "قيمة البضاعة بعد الخصم",
+                round(retailer.price_per_unit * retailer.units_count, 2)
+                if retailer.discount_mode == "unit_price"
+                else round(retailer.original_price_per_unit * retailer.units_count, 2),
+            ),
             ("العمولة للوحدة", retailer.commission_per_unit),
+            (
+                "الخصم من العمولة للوحدة" if retailer.discount_mode == "commission" else "الخصم من سعر الوحدة",
+                retailer.discount_per_unit,
+            ),
+            (
+                "العمولة الصافية للوحدة" if retailer.discount_mode == "commission" else "العمولة للوحدة",
+                effective_commission_per_unit(
+                    retailer.commission_per_unit,
+                    retailer.discount_per_unit,
+                ) if retailer.discount_mode == "commission" else retailer.commission_per_unit,
+            ),
             ("المصروف الإداري", retailer.admin_expense),
             ("المدفوع", retailer.total_paid),
             ("المتبقي", retailer.remaining_balance),

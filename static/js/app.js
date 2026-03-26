@@ -4,9 +4,11 @@ forms.forEach((form) => {
     const unitsInput = form.querySelector('input[name="units_count"]');
     const originalInput = form.querySelector('input[name="original_price_per_unit"]');
     const discountInput = form.querySelector('input[name="discount_per_unit"]');
+    const discountModeInput = form.querySelector('[name="discount_mode"]');
     const commissionInput = form.querySelector('input[name="commission_per_unit"]');
     const adminExpenseInput = form.querySelector('input[name="admin_expense"]');
     const previewRoot = form.closest(".panel")?.querySelector("[data-sale-preview]");
+    const previewLabel = previewRoot?.querySelector("[data-preview-label]");
     const priceDisplay = form.querySelector("[data-sale-price-display]");
     const fruitField = form.querySelector('[data-sale-field="fruit"]');
     const classField = form.querySelector('[data-sale-field="class"]');
@@ -136,20 +138,31 @@ forms.forEach((form) => {
         const units = Number(unitsInput.value || 0);
         const originalPrice = Number(originalInput.value || 0);
         const discount = Number(discountInput.value || 0);
+        const discountMode = discountModeInput?.value === "unit_price" ? "unit_price" : "commission";
         const commission = Number(commissionInput?.value || 0);
         const adminExpense = Number(adminExpenseInput?.value || 0);
-        const unitPrice = Math.max(originalPrice - discount, 0);
+        const unitPrice = discountMode === "unit_price"
+            ? Math.max(originalPrice - discount, 0)
+            : originalPrice;
+        const netCommission = discountMode === "commission"
+            ? Math.max(commission - discount, 0)
+            : commission;
         const totalPrice = unitPrice * units;
-        const finalPrice = form.dataset.saleForm === "retail"
-            ? totalPrice + (commission * units) + adminExpense
-            : totalPrice;
+        const finalPrice = totalPrice + (netCommission * units) + adminExpense;
 
         if (priceDisplay) {
             priceDisplay.textContent = originalPrice > 0
                 ? `${originalPrice.toFixed(2)} ج.م`
                 : "يتم جلبه تلقائياً من بيانات المورد";
         }
-        previewRoot.querySelector('[data-preview="unit_price"]').textContent = unitPrice.toFixed(2);
+        if (previewLabel) {
+            previewLabel.textContent = discountMode === "commission"
+                ? "العمولة الصافية للوحدة"
+                : "سعر البيع للوحدة";
+        }
+        previewRoot.querySelector('[data-preview="unit_price"]').textContent = (
+            discountMode === "commission" ? netCommission : unitPrice
+        ).toFixed(2);
         previewRoot.querySelector('[data-preview="final_price"]').textContent = finalPrice.toFixed(2);
     };
 

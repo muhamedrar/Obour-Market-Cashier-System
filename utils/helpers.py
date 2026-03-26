@@ -4,7 +4,7 @@ from datetime import date, datetime, time
 from functools import wraps
 
 from flask import flash, redirect, request, session, url_for
-from sqlalchemy import func, select
+from sqlalchemy import case, func, select
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from config import Config
@@ -92,20 +92,36 @@ def update_supplier_totals(supplier: Supplier) -> None:
     sync_supplier_status(supplier)
 
 
+def effective_commission_per_unit(commission_per_unit: float, discount_per_unit: float) -> float:
+    return max(round(commission_per_unit - discount_per_unit, 2), 0.0)
+
+
+def normalize_discount_mode(discount_mode: str | None) -> str:
+    return "unit_price" if discount_mode == "unit_price" else "commission"
+
+
 def calculate_sale_values(
     units_count: int,
     original_price_per_unit: float,
     discount_per_unit: float,
     commission_per_unit: float = 0.0,
     admin_expense: float = 0.0,
+    discount_mode: str = "commission",
 ):
-    discounted_price = max(round(original_price_per_unit - discount_per_unit, 2), 0.0)
-    total_price = round(discounted_price * units_count, 2)
+    discount_mode = normalize_discount_mode(discount_mode)
+    if discount_mode == "unit_price":
+        price_per_unit = max(round(original_price_per_unit - discount_per_unit, 2), 0.0)
+        total_price = round(price_per_unit * units_count, 2)
+        net_commission = round(commission_per_unit, 2)
+    else:
+        price_per_unit = round(original_price_per_unit, 2)
+        total_price = round(price_per_unit * units_count, 2)
+        net_commission = effective_commission_per_unit(commission_per_unit, discount_per_unit)
     final_price = round(
-        total_price + (commission_per_unit * units_count) + admin_expense,
+        total_price + (net_commission * units_count) + admin_expense,
         2,
     )
-    return discounted_price, total_price, final_price
+    return price_per_unit, total_price, final_price
 
 
 def calculate_sale_totals(
@@ -114,15 +130,23 @@ def calculate_sale_totals(
     discount_per_unit: float,
     commission_per_unit: float = 0.0,
     admin_expense: float = 0.0,
+    discount_mode: str = "commission",
 ):
+    discount_mode = normalize_discount_mode(discount_mode)
     original_price_per_unit = round(supplier_total_price / units_count, 2) if units_count else 0.0
-    discounted_total = max(round(supplier_total_price - (discount_per_unit * units_count), 2), 0.0)
-    discounted_price_per_unit = round(discounted_total / units_count, 2) if units_count else 0.0
+    if discount_mode == "unit_price":
+        price_per_unit = max(round(original_price_per_unit - discount_per_unit, 2), 0.0)
+        total_price = round(price_per_unit * units_count, 2)
+        net_commission = round(commission_per_unit, 2)
+    else:
+        price_per_unit = original_price_per_unit
+        total_price = round(supplier_total_price, 2)
+        net_commission = effective_commission_per_unit(commission_per_unit, discount_per_unit)
     final_price = round(
-        discounted_total + (commission_per_unit * units_count) + admin_expense,
+        total_price + (net_commission * units_count) + admin_expense,
         2,
     )
-    return original_price_per_unit, discounted_price_per_unit, discounted_total, final_price
+    return original_price_per_unit, price_per_unit, total_price, final_price
 
 
 def update_special_retailer_status(retailer: SpecialRetailer) -> None:
@@ -354,9 +378,23 @@ def supplier_cost_total(
 
 
 def revenue_breakdown(db_session, date_from: str | None = None, date_to: str | None = None):
+    retail_effective_commission = case(
+        (
+            RetailTransaction.discount_mode == "commission",
+            case(
+                (
+                    RetailTransaction.commission_per_unit > RetailTransaction.discount_per_unit,
+                    (RetailTransaction.commission_per_unit - RetailTransaction.discount_per_unit)
+                    * RetailTransaction.units_count,
+                ),
+                else_=0,
+            ),
+        ),
+        else_=RetailTransaction.commission_per_unit * RetailTransaction.units_count,
+    )
     retail_commission_query = select(
         func.coalesce(
-            func.sum(RetailTransaction.commission_per_unit * RetailTransaction.units_count),
+            func.sum(retail_effective_commission),
             0,
         )
     )
@@ -367,9 +405,23 @@ def revenue_breakdown(db_session, date_from: str | None = None, date_to: str | N
         date_to,
     )
     retail_commission_total = db_session.scalar(retail_commission_query) or 0
+    debt_effective_commission = case(
+        (
+            SpecialRetailer.discount_mode == "commission",
+            case(
+                (
+                    SpecialRetailer.commission_per_unit > SpecialRetailer.discount_per_unit,
+                    (SpecialRetailer.commission_per_unit - SpecialRetailer.discount_per_unit)
+                    * SpecialRetailer.units_count,
+                ),
+                else_=0,
+            ),
+        ),
+        else_=SpecialRetailer.commission_per_unit * SpecialRetailer.units_count,
+    )
     debt_commission_query = select(
         func.coalesce(
-            func.sum(SpecialRetailer.commission_per_unit * SpecialRetailer.units_count),
+            func.sum(debt_effective_commission),
             0,
         )
     )
@@ -389,12 +441,17 @@ def revenue_breakdown(db_session, date_from: str | None = None, date_to: str | N
     debt_admin_query = apply_date_range(debt_admin_query, SpecialRetailer.date, date_from, date_to)
     debt_admin_total = db_session.scalar(debt_admin_query) or 0
     admin_fees_total = float(retail_admin_total) + float(debt_admin_total)
+
+    retail_total_query = select(func.coalesce(func.sum(RetailTransaction.final_price), 0))
+    retail_total_query = apply_date_range(retail_total_query, RetailTransaction.date, date_from, date_to)
+    retail_total = float(db_session.scalar(retail_total_query) or 0)
+
     expenses_query = select(func.coalesce(func.sum(Expense.amount), 0))
     expenses_query = apply_date_range(expenses_query, Expense.date, date_from, date_to)
-    other_expenses_total = db_session.scalar(expenses_query) or 0
+    other_expenses_total = float(db_session.scalar(expenses_query) or 0)
     debt_total_query = select(func.coalesce(func.sum(SpecialRetailer.total_price), 0))
     debt_total_query = apply_date_range(debt_total_query, SpecialRetailer.date, date_from, date_to)
-    debt_total = db_session.scalar(debt_total_query) or 0
+    debt_total = float(db_session.scalar(debt_total_query) or 0)
     supplier_costs = supplier_cost_total(db_session, date_from, date_to)
     debt_paid_total = received_payments_total(db_session, date_from, date_to)
     retail_count_query = select(func.count(RetailTransaction.id))
@@ -403,22 +460,16 @@ def revenue_breakdown(db_session, date_from: str | None = None, date_to: str | N
     debt_count_query = apply_date_range(debt_count_query, SpecialRetailer.date, date_from, date_to)
     sales_count = (db_session.scalar(retail_count_query) or 0) + (db_session.scalar(debt_count_query) or 0)
 
-    total_revenue = round(
-        float(commission_total) + float(admin_fees_total) + supplier_costs + float(debt_total),
-        2,
-    )
-    net_revenue = round(
-        float(commission_total) + float(admin_fees_total) - float(other_expenses_total),
-        2,
-    )
-    current_revenue = round(net_revenue + supplier_costs + debt_paid_total, 2)
+    total_revenue = round(retail_total + debt_total, 2)
+    net_revenue = round(total_revenue - supplier_costs - other_expenses_total, 2)
+    current_revenue = round(retail_total + debt_paid_total - other_expenses_total, 2)
 
     return {
         "commission_total": round(float(commission_total), 2),
         "admin_fees_total": round(float(admin_fees_total), 2),
         "supplier_cost_total": supplier_costs,
-        "other_expenses_total": round(float(other_expenses_total), 2),
-        "debt_total": round(float(debt_total), 2),
+        "other_expenses_total": round(other_expenses_total, 2),
+        "debt_total": round(debt_total, 2),
         "debt_paid_total": debt_paid_total,
         "sales_count": int(sales_count),
         "net_revenue": net_revenue,

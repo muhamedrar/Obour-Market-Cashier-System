@@ -9,7 +9,7 @@
                 <p>سعر الوحدة يؤخذ تلقائياً من المخزون المتاح بنظام FIFO، والعمولة والمصروف الإداري لا يعدلهما إلا المسؤول.</p>
             </div>
             <div class="preview-strip" data-sale-preview>
-                <span>سعر البيع للوحدة: <strong data-preview="unit_price">0.00</strong></span>
+                <span><span data-preview-label>العمولة الصافية للوحدة</span>: <strong data-preview="unit_price">0.00</strong></span>
                 <span>الإجمالي النهائي: <strong data-preview="final_price">0.00</strong></span>
             </div>
         </div>
@@ -52,6 +52,18 @@
                 <span>الخصم للوحدة</span>
                 <input type="number" min="0" step="0.01" name="discount_per_unit" value="{{ edit_transaction.discount_per_unit if edit_transaction else 0 }}" required>
             </label>
+            {% if is_admin %}
+                <label>
+                    <span>نوع تأثير الخصم</span>
+                    <select name="discount_mode">
+                        {% set current_discount_mode = edit_transaction.discount_mode if edit_transaction else 'commission' %}
+                        <option value="commission" {{ 'selected' if current_discount_mode == 'commission' else '' }}>يخصم من العمولة</option>
+                        <option value="unit_price" {{ 'selected' if current_discount_mode == 'unit_price' else '' }}>يخصم من سعر الوحدة</option>
+                    </select>
+                </label>
+            {% else %}
+                <input type="hidden" name="discount_mode" value="{{ edit_transaction.discount_mode if edit_transaction else 'commission' }}">
+            {% endif %}
             {% if is_admin %}
                 <label>
                     <span>العمولة للوحدة</span>

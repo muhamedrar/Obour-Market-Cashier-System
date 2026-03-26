@@ -17,19 +17,29 @@ def ensure_sqlite_columns():
         return
 
     inspector = inspect(engine)
-    if "special_retailers" not in inspector.get_table_names():
-        return
-
-    columns = {column["name"] for column in inspector.get_columns("special_retailers")}
     statements = []
-    if "commission_per_unit" not in columns:
-        statements.append(
-            "ALTER TABLE special_retailers ADD COLUMN commission_per_unit FLOAT NOT NULL DEFAULT 0"
-        )
-    if "admin_expense" not in columns:
-        statements.append(
-            "ALTER TABLE special_retailers ADD COLUMN admin_expense FLOAT NOT NULL DEFAULT 0"
-        )
+
+    if "special_retailers" in inspector.get_table_names():
+        special_columns = {column["name"] for column in inspector.get_columns("special_retailers")}
+        if "commission_per_unit" not in special_columns:
+            statements.append(
+                "ALTER TABLE special_retailers ADD COLUMN commission_per_unit FLOAT NOT NULL DEFAULT 0"
+            )
+        if "admin_expense" not in special_columns:
+            statements.append(
+                "ALTER TABLE special_retailers ADD COLUMN admin_expense FLOAT NOT NULL DEFAULT 0"
+            )
+        if "discount_mode" not in special_columns:
+            statements.append(
+                "ALTER TABLE special_retailers ADD COLUMN discount_mode VARCHAR(20) NOT NULL DEFAULT 'commission'"
+            )
+
+    if "retail_transactions" in inspector.get_table_names():
+        retail_columns = {column["name"] for column in inspector.get_columns("retail_transactions")}
+        if "discount_mode" not in retail_columns:
+            statements.append(
+                "ALTER TABLE retail_transactions ADD COLUMN discount_mode VARCHAR(20) NOT NULL DEFAULT 'commission'"
+            )
 
     if not statements:
         return

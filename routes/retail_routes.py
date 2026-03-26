@@ -9,8 +9,10 @@ from utils.helpers import (
     available_goods,
     build_base_context,
     calculate_sale_totals,
+    effective_commission_per_unit,
     get_fifo_quote,
     get_or_create_settings,
+    normalize_discount_mode,
     parse_date,
     parse_float,
     parse_int,
@@ -53,6 +55,11 @@ def retail():
             if is_admin_user
             else settings.admin_expense
         )
+        discount_mode = (
+            normalize_discount_mode(request.form.get("discount_mode"))
+            if is_admin_user
+            else "commission"
+        )
         units_count = parse_int(request.form.get("units_count"))
         fruit_name = request.form.get("fruit_name", "").strip()
         class_number = request.form.get("class_number", "").strip()
@@ -70,7 +77,11 @@ def retail():
             flash(quote["message"], "error")
             return redirect(url_for("retail.retail"))
 
-        if discount_per_unit > quote["average_price_per_unit"]:
+        if discount_mode == "commission" and discount_per_unit > commission_per_unit:
+            db_session.rollback()
+            flash("الخصم للوحدة لا يمكن أن يكون أكبر من العمولة للوحدة لأنه يُخصم منها مباشرة.", "error")
+            return redirect(url_for("retail.retail"))
+        if discount_mode == "unit_price" and discount_per_unit > quote["average_price_per_unit"]:
             db_session.rollback()
             flash("الخصم للوحدة لا يمكن أن يكون أكبر من سعر الوحدة القادم من المخزون.", "error")
             return redirect(url_for("retail.retail"))
@@ -81,6 +92,7 @@ def retail():
             discount_per_unit,
             commission_per_unit,
             admin_expense,
+            discount_mode,
         )
 
         transaction.date = parse_date(request.form.get("date"))
@@ -89,6 +101,7 @@ def retail():
         transaction.class_number = class_number
         transaction.original_price_per_unit = original_price
         transaction.discount_per_unit = discount_per_unit
+        transaction.discount_mode = discount_mode
         transaction.price_per_unit = price_per_unit
         transaction.commission_per_unit = commission_per_unit
         transaction.admin_expense = admin_expense
@@ -204,8 +217,24 @@ def retail_receipt(transaction_id: int):
             ]
         ],
         "summary_lines": [
+            ("نوع الخصم", "من العمولة" if transaction.discount_mode == "commission" else "من سعر الوحدة"),
             ("متوسط سعر المورد", transaction.original_price_per_unit),
-            ("قيمة البضاعة بعد الخصم", transaction.total_price),
+            (
+                "قيمة البضاعة" if transaction.discount_mode == "commission" else "قيمة البضاعة بعد الخصم",
+                transaction.total_price,
+            ),
+            (
+                "الخصم من العمولة للوحدة" if transaction.discount_mode == "commission" else "الخصم من سعر الوحدة",
+                transaction.discount_per_unit,
+            ),
+            (
+                "العمولة الصافية للوحدة" if transaction.discount_mode == "commission" else "العمولة للوحدة",
+                effective_commission_per_unit(
+                    transaction.commission_per_unit,
+                    transaction.discount_per_unit,
+                ) if transaction.discount_mode == "commission" else transaction.commission_per_unit,
+            ),
+            ("المصروف الإداري", transaction.admin_expense),
             ("الإجمالي النهائي", transaction.final_price),
         ],
         "download_url": url_for("retail.retail_receipt_pdf", transaction_id=transaction.id),
