@@ -5,6 +5,7 @@ from models.special_retailer import SpecialRetailer
 from utils.helpers import (
     admin_required,
     allocate_inventory_fifo,
+    available_goods,
     build_base_context,
     calculate_sale_totals,
     get_fifo_quote,
@@ -126,6 +127,16 @@ def special_retailers():
         .order_by(SpecialRetailer.date.desc(), SpecialRetailer.id.desc())
         .all()
     )
+    goods = available_goods(db_session)
+    stock_options = [
+        {
+            "fruit_name": item.fruit_name,
+            "class_number": item.class_number,
+            "remaining_units": int(item.remaining_units or 0),
+            "price_per_unit": float(item.price_per_unit or 0),
+        }
+        for item in goods
+    ]
     context = {
         **build_base_context(db_session),
         "page_title": "تجار الآجل",
@@ -133,6 +144,7 @@ def special_retailers():
         "edit_retailer": edit_retailer,
         "default_commission": settings.commission_per_unit,
         "default_admin_expense": settings.admin_expense,
+        "stock_options": stock_options,
     }
     return render_template("special_retailers.html", **context)
 

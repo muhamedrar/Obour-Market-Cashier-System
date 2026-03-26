@@ -134,6 +134,15 @@ def retail():
         RetailTransaction.date.desc(), RetailTransaction.id.desc()
     ).all()
     goods = available_goods(db_session)
+    stock_options = [
+        {
+            "fruit_name": item.fruit_name,
+            "class_number": item.class_number,
+            "remaining_units": int(item.remaining_units or 0),
+            "price_per_unit": float(item.price_per_unit or 0),
+        }
+        for item in goods
+    ]
     context = {
         **build_base_context(db_session),
         "page_title": "البيع النقدي",
@@ -142,6 +151,7 @@ def retail():
         "default_commission": settings.commission_per_unit,
         "default_admin_expense": settings.admin_expense,
         "available_goods": goods,
+        "stock_options": stock_options,
         "date_from": date_from,
         "date_to": date_to,
     }

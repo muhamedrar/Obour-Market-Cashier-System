@@ -13,7 +13,7 @@
                 <span>الإجمالي النهائي: <strong data-preview="final_price">0.00</strong></span>
             </div>
         </div>
-        <form class="form-grid" method="post" data-sale-form="retail">
+        <form class="form-grid" method="post" data-sale-form="retail" data-stock-options='{{ stock_options|tojson }}'>
             <input type="hidden" name="transaction_id" value="{{ edit_transaction.id if edit_transaction else '' }}">
             <input type="hidden" name="original_price_per_unit" value="{{ edit_transaction.original_price_per_unit if edit_transaction else '' }}" data-sale-field="price">
             <label>
@@ -22,11 +22,23 @@
             </label>
             <label>
                 <span>الصنف</span>
-                <input type="text" name="fruit_name" value="{{ edit_transaction.fruit_name if edit_transaction else '' }}" required data-sale-field="fruit">
+                <select name="fruit_name" required data-sale-field="fruit">
+                    {% if edit_transaction %}
+                        <option value="{{ edit_transaction.fruit_name }}" selected>{{ edit_transaction.fruit_name }}</option>
+                    {% else %}
+                        <option value="" selected>اختر الصنف من المخزون</option>
+                    {% endif %}
+                </select>
             </label>
             <label>
                 <span>الدرجة</span>
-                <input type="text" name="class_number" value="{{ edit_transaction.class_number if edit_transaction else '' }}" required data-sale-field="class">
+                <select name="class_number" required data-sale-field="class">
+                    {% if edit_transaction %}
+                        <option value="{{ edit_transaction.class_number }}" selected>{{ edit_transaction.class_number }}</option>
+                    {% else %}
+                        <option value="" selected>اختر الدرجة</option>
+                    {% endif %}
+                </select>
             </label>
             <label>
                 <span>عدد الوحدات</span>

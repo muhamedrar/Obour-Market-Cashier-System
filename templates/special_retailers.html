@@ -13,7 +13,7 @@
                 <span>إجمالي الفاتورة: <strong data-preview="final_price">0.00</strong></span>
             </div>
         </div>
-        <form class="form-grid" method="post" data-sale-form="special">
+        <form class="form-grid" method="post" data-sale-form="special" data-stock-options='{{ stock_options|tojson }}'>
             <input type="hidden" name="retailer_id" value="{{ edit_retailer.id if edit_retailer else '' }}">
             <input type="hidden" name="original_price_per_unit" value="{{ edit_retailer.original_price_per_unit if edit_retailer else '' }}" data-sale-field="price">
             <input type="hidden" name="commission_per_unit" value="{{ edit_retailer.commission_per_unit if edit_retailer else default_commission }}">
@@ -28,11 +28,23 @@
             </label>
             <label>
                 <span>الصنف</span>
-                <input type="text" name="fruit_name" value="{{ edit_retailer.fruit_name if edit_retailer else '' }}" required>
+                <select name="fruit_name" required data-sale-field="fruit">
+                    {% if edit_retailer %}
+                        <option value="{{ edit_retailer.fruit_name }}" selected>{{ edit_retailer.fruit_name }}</option>
+                    {% else %}
+                        <option value="" selected>اختر الصنف من المخزون</option>
+                    {% endif %}
+                </select>
             </label>
             <label>
                 <span>الدرجة</span>
-                <input type="text" name="class_number" value="{{ edit_retailer.class_number if edit_retailer else '' }}" required>
+                <select name="class_number" required data-sale-field="class">
+                    {% if edit_retailer %}
+                        <option value="{{ edit_retailer.class_number }}" selected>{{ edit_retailer.class_number }}</option>
+                    {% else %}
+                        <option value="" selected>اختر الدرجة</option>
+                    {% endif %}
+                </select>
             </label>
             <label>
                 <span>عدد الوحدات</span>
