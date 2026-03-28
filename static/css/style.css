@@ -428,6 +428,20 @@ textarea:focus {
     border-radius: 12px;
 }
 
+.expense-pay-form {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.expense-pay-form input {
+    width: 88px;
+    min-width: 88px;
+    padding: 8px 10px;
+    border-radius: 12px;
+}
+
 .btn {
     border: 0;
     cursor: pointer;

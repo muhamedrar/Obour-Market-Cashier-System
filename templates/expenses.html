@@ -41,8 +41,14 @@
             <form class="inline-form" method="get">
                 <input type="datetime-local" name="date_from" value="{{ date_from }}">
                 <input type="datetime-local" name="date_to" value="{{ date_to }}">
+                <select name="status">
+                    <option value="">كل الحالات</option>
+                    <option value="unpaid" {{ 'selected' if status_filter == 'unpaid' else '' }}>غير مسدد</option>
+                    <option value="partial" {{ 'selected' if status_filter == 'partial' else '' }}>مدفوع جزئياً</option>
+                    <option value="paid" {{ 'selected' if status_filter == 'paid' else '' }}>مدفوع</option>
+                </select>
                 <button class="btn btn-secondary" type="submit">تصفية</button>
-                {% if date_from or date_to %}
+                {% if date_from or date_to or status_filter %}
                     <a class="btn btn-ghost" href="{{ url_for('expenses.expenses') }}">مسح</a>
                 {% endif %}
             </form>
@@ -54,8 +60,10 @@
                         <th>التاريخ</th>
                         <th>اسم المصروف</th>
                         <th>القيمة</th>
+                        <th>المدفوع</th>
+                        <th>المتبقي</th>
                         <th>الحالة</th>
-                        <th>تاريخ السداد</th>
+                        <th>آخر دفعة</th>
                         <th>إجراءات</th>
                     </tr>
                 </thead>
@@ -65,18 +73,25 @@
                             <td>{{ expense.date|date_ar }}</td>
                             <td>{{ expense.expense_name }}</td>
                             <td>{{ expense.amount|currency }}</td>
+                            <td>{{ expense.normalized_paid_amount|currency }}</td>
+                            <td>{{ expense.remaining_amount|currency }}</td>
                             <td>
-                                <span class="status {{ 'paid' if expense.is_paid else 'unpaid' }}">
-                                    {{ "مدفوع" if expense.is_paid else "غير مسدد" }}
+                                <span class="status {{ expense.payment_status }}">
+                                    {{ "مدفوع" if expense.payment_status == "paid" else ("مدفوع جزئياً" if expense.payment_status == "partial" else "غير مسدد") }}
                                 </span>
                             </td>
                             <td>{{ expense.paid_at|date_ar if expense.paid_at else "-" }}</td>
                             <td class="actions-cell">
                                 {% if is_admin %}
-                                    {% if not expense.is_paid %}
+                                    {% if expense.payment_status != "paid" %}
+                                        <form class="expense-pay-form" method="post" action="{{ url_for('expenses.pay_expense', expense_id=expense.id) }}">
+                                            <input type="hidden" name="next" value="{{ request.full_path if request.query_string else request.path }}">
+                                            <input type="number" min="0.01" max="{{ expense.remaining_amount }}" step="0.01" name="payment_amount" placeholder="دفعة" required>
+                                            <button class="btn btn-small btn-secondary" type="submit">سداد جزئي</button>
+                                        </form>
                                         <form method="post" action="{{ url_for('expenses.confirm_expense_payment', expense_id=expense.id) }}">
                                             <input type="hidden" name="next" value="{{ request.full_path if request.query_string else request.path }}">
-                                            <button class="btn btn-small btn-secondary" type="submit" data-confirm="تأكيد سداد هذا المصروف؟">تأكيد السداد</button>
+                                            <button class="btn btn-small btn-secondary" type="submit" data-confirm="تأكيد سداد باقي المصروف؟">سداد كامل</button>
                                         </form>
                                     {% endif %}
                                     <a class="btn btn-small btn-ghost" href="{{ url_for('expenses.expenses', edit=expense.id) }}">تعديل</a>
@@ -89,7 +104,7 @@
                             </td>
                         </tr>
                     {% else %}
-                        <tr><td colspan="6" class="empty-state">لا توجد مصروفات مسجلة.</td></tr>
+                        <tr><td colspan="8" class="empty-state">لا توجد مصروفات مسجلة.</td></tr>
                     {% endfor %}
                 </tbody>
             </table>

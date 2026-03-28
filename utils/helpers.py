@@ -87,6 +87,16 @@ def sync_supplier_status(supplier: Supplier) -> None:
         supplier.remaining_units = 0
 
 
+def sync_expense_payment(expense: Expense) -> None:
+    expense.amount = round(max(float(expense.amount or 0), 0.0), 2)
+    expense.paid_amount = round(min(max(float(expense.paid_amount or 0), 0.0), expense.amount), 2)
+    expense.is_paid = expense.amount > 0 and expense.paid_amount >= expense.amount
+    if expense.paid_amount > 0:
+        expense.paid_at = expense.paid_at or datetime.now()
+    else:
+        expense.paid_at = None
+
+
 def update_supplier_totals(supplier: Supplier) -> None:
     supplier.total_price = round(supplier.units_count * supplier.price_per_unit, 2)
     sync_supplier_status(supplier)
@@ -446,6 +456,15 @@ def supplier_cost_total(
 
 
 def revenue_breakdown(db_session, date_from: str | None = None, date_to: str | None = None):
+    expense_paid_expression = case(
+        (Expense.paid_amount < 0, 0),
+        (Expense.paid_amount > Expense.amount, Expense.amount),
+        else_=Expense.paid_amount,
+    )
+    expense_remaining_expression = case(
+        (Expense.amount > expense_paid_expression, Expense.amount - expense_paid_expression),
+        else_=0,
+    )
     retail_effective_commission = case(
         (
             RetailTransaction.discount_mode == "commission",
@@ -517,10 +536,10 @@ def revenue_breakdown(db_session, date_from: str | None = None, date_to: str | N
     expenses_query = select(func.coalesce(func.sum(Expense.amount), 0))
     expenses_query = apply_date_range(expenses_query, Expense.date, date_from, date_to)
     other_expenses_total = float(db_session.scalar(expenses_query) or 0)
-    paid_expenses_query = select(func.coalesce(func.sum(Expense.amount), 0)).where(Expense.is_paid.is_(True))
+    paid_expenses_query = select(func.coalesce(func.sum(expense_paid_expression), 0))
     paid_expenses_query = apply_date_range(paid_expenses_query, Expense.date, date_from, date_to)
     paid_other_expenses_total = float(db_session.scalar(paid_expenses_query) or 0)
-    unpaid_expenses_query = select(func.coalesce(func.sum(Expense.amount), 0)).where(Expense.is_paid.is_(False))
+    unpaid_expenses_query = select(func.coalesce(func.sum(expense_remaining_expression), 0))
     unpaid_expenses_query = apply_date_range(unpaid_expenses_query, Expense.date, date_from, date_to)
     unpaid_other_expenses_total = float(db_session.scalar(unpaid_expenses_query) or 0)
     debt_total_query = select(func.coalesce(func.sum(SpecialRetailer.total_price), 0))

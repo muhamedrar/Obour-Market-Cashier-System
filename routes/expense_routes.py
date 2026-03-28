@@ -11,6 +11,7 @@ from utils.helpers import (
     parse_date,
     parse_float,
     parse_int,
+    sync_expense_payment,
 )
 
 
@@ -40,6 +41,7 @@ def expenses():
             flash("يرجى إدخال اسم المصروف وقيمته بشكل صحيح.", "error")
             return redirect(url_for("expenses.expenses"))
 
+        sync_expense_payment(expense)
         db_session.add(expense)
         db_session.commit()
         flash("تم حفظ المصروف.", "success")
@@ -52,8 +54,15 @@ def expenses():
 
     date_from = request.args.get("date_from", "").strip()
     date_to = request.args.get("date_to", "").strip()
+    status_filter = request.args.get("status", "").strip()
     expenses_query = db_session.query(Expense)
     expenses_query = apply_date_range(expenses_query, Expense.date, date_from or None, date_to or None)
+    if status_filter == "paid":
+        expenses_query = expenses_query.filter(Expense.paid_amount >= Expense.amount)
+    elif status_filter == "partial":
+        expenses_query = expenses_query.filter(Expense.paid_amount > 0, Expense.paid_amount < Expense.amount)
+    elif status_filter == "unpaid":
+        expenses_query = expenses_query.filter(Expense.paid_amount <= 0)
     expenses_list = expenses_query.order_by(Expense.date.desc(), Expense.id.desc()).all()
     context = {
         **build_base_context(db_session),
@@ -62,6 +71,7 @@ def expenses():
         "edit_expense": edit_expense,
         "date_from": date_from,
         "date_to": date_to,
+        "status_filter": status_filter,
     }
     return render_template("expenses.html", **context)
 
@@ -79,11 +89,39 @@ def confirm_expense_payment(expense_id: int):
         flash("تم تأكيد سداد هذا المصروف مسبقاً.", "info")
         return redirect(request.form.get("next") or url_for("expenses.expenses"))
 
-    expense.is_paid = True
+    expense.paid_amount = expense.amount
     expense.paid_at = datetime.now()
+    sync_expense_payment(expense)
     db_session.add(expense)
     db_session.commit()
     flash("تم تأكيد سداد المصروف.", "success")
+    return redirect(request.form.get("next") or url_for("expenses.expenses"))
+
+
+@expense_bp.route("/<int:expense_id>/pay", methods=["POST"])
+@admin_required
+def pay_expense(expense_id: int):
+    db_session = get_session()
+    expense = db_session.get(Expense, expense_id)
+    if not expense:
+        flash("المصروف غير موجود.", "error")
+        return redirect(url_for("expenses.expenses"))
+
+    payment_amount = parse_float(request.form.get("payment_amount"))
+    if payment_amount <= 0:
+        flash("يرجى إدخال مبلغ سداد صحيح.", "error")
+        return redirect(request.form.get("next") or url_for("expenses.expenses"))
+
+    if expense.remaining_amount <= 0:
+        flash("هذا المصروف مسدد بالكامل بالفعل.", "info")
+        return redirect(request.form.get("next") or url_for("expenses.expenses"))
+
+    expense.paid_amount = round(expense.normalized_paid_amount + payment_amount, 2)
+    expense.paid_at = datetime.now()
+    sync_expense_payment(expense)
+    db_session.add(expense)
+    db_session.commit()
+    flash("تم تسجيل دفعة المصروف.", "success")
     return redirect(request.form.get("next") or url_for("expenses.expenses"))
 
 
