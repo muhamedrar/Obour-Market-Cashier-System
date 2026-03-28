@@ -54,6 +54,8 @@
                         <th>التاريخ</th>
                         <th>اسم المصروف</th>
                         <th>القيمة</th>
+                        <th>الحالة</th>
+                        <th>تاريخ السداد</th>
                         <th>إجراءات</th>
                     </tr>
                 </thead>
@@ -63,8 +65,20 @@
                             <td>{{ expense.date|date_ar }}</td>
                             <td>{{ expense.expense_name }}</td>
                             <td>{{ expense.amount|currency }}</td>
+                            <td>
+                                <span class="status {{ 'paid' if expense.is_paid else 'unpaid' }}">
+                                    {{ "مدفوع" if expense.is_paid else "غير مسدد" }}
+                                </span>
+                            </td>
+                            <td>{{ expense.paid_at|date_ar if expense.paid_at else "-" }}</td>
                             <td class="actions-cell">
                                 {% if is_admin %}
+                                    {% if not expense.is_paid %}
+                                        <form method="post" action="{{ url_for('expenses.confirm_expense_payment', expense_id=expense.id) }}">
+                                            <input type="hidden" name="next" value="{{ request.full_path if request.query_string else request.path }}">
+                                            <button class="btn btn-small btn-secondary" type="submit" data-confirm="تأكيد سداد هذا المصروف؟">تأكيد السداد</button>
+                                        </form>
+                                    {% endif %}
                                     <a class="btn btn-small btn-ghost" href="{{ url_for('expenses.expenses', edit=expense.id) }}">تعديل</a>
                                     <form method="post" action="{{ url_for('expenses.delete_expense', expense_id=expense.id) }}">
                                         <button class="btn btn-small btn-danger" type="submit" data-confirm="هل تريد حذف المصروف؟">حذف</button>
@@ -75,7 +89,7 @@
                             </td>
                         </tr>
                     {% else %}
-                        <tr><td colspan="4" class="empty-state">لا توجد مصروفات مسجلة.</td></tr>
+                        <tr><td colspan="6" class="empty-state">لا توجد مصروفات مسجلة.</td></tr>
                     {% endfor %}
                 </tbody>
             </table>

@@ -517,6 +517,12 @@ def revenue_breakdown(db_session, date_from: str | None = None, date_to: str | N
     expenses_query = select(func.coalesce(func.sum(Expense.amount), 0))
     expenses_query = apply_date_range(expenses_query, Expense.date, date_from, date_to)
     other_expenses_total = float(db_session.scalar(expenses_query) or 0)
+    paid_expenses_query = select(func.coalesce(func.sum(Expense.amount), 0)).where(Expense.is_paid.is_(True))
+    paid_expenses_query = apply_date_range(paid_expenses_query, Expense.date, date_from, date_to)
+    paid_other_expenses_total = float(db_session.scalar(paid_expenses_query) or 0)
+    unpaid_expenses_query = select(func.coalesce(func.sum(Expense.amount), 0)).where(Expense.is_paid.is_(False))
+    unpaid_expenses_query = apply_date_range(unpaid_expenses_query, Expense.date, date_from, date_to)
+    unpaid_other_expenses_total = float(db_session.scalar(unpaid_expenses_query) or 0)
     debt_total_query = select(func.coalesce(func.sum(SpecialRetailer.total_price), 0))
     debt_total_query = apply_date_range(debt_total_query, SpecialRetailer.date, date_from, date_to)
     debt_total = float(db_session.scalar(debt_total_query) or 0)
@@ -530,13 +536,15 @@ def revenue_breakdown(db_session, date_from: str | None = None, date_to: str | N
 
     total_revenue = round(retail_total + debt_total, 2)
     net_revenue = round(total_revenue - supplier_costs - other_expenses_total, 2)
-    current_revenue = round(retail_total + debt_paid_total - other_expenses_total, 2)
+    current_revenue = round(retail_total + debt_paid_total - paid_other_expenses_total, 2)
 
     return {
         "commission_total": round(float(commission_total), 2),
         "admin_fees_total": round(float(admin_fees_total), 2),
         "supplier_cost_total": supplier_costs,
         "other_expenses_total": round(other_expenses_total, 2),
+        "paid_other_expenses_total": round(paid_other_expenses_total, 2),
+        "unpaid_other_expenses_total": round(unpaid_other_expenses_total, 2),
         "debt_total": round(debt_total, 2),
         "debt_paid_total": debt_paid_total,
         "sales_count": int(sales_count),

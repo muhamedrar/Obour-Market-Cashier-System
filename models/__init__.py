@@ -63,6 +63,13 @@ def ensure_sqlite_columns():
                 "ALTER TABLE settings ADD COLUMN shift_cutoff_time VARCHAR(5) NOT NULL DEFAULT '00:00'"
             )
 
+    if "expenses" in inspector.get_table_names():
+        expense_columns = {column["name"] for column in inspector.get_columns("expenses")}
+        if "is_paid" not in expense_columns:
+            statements.append("ALTER TABLE expenses ADD COLUMN is_paid BOOLEAN NOT NULL DEFAULT 0")
+        if "paid_at" not in expense_columns:
+            statements.append("ALTER TABLE expenses ADD COLUMN paid_at DATETIME")
+
     if not statements:
         return
 

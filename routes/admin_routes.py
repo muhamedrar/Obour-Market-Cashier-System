@@ -150,6 +150,7 @@ def report_pdf():
             ["عدد عمليات البيع", "-", "-", "-", str(breakdown["sales_count"])],
             ["إجمالي الديون المحصلة", "-", "-", "-", f"{breakdown['debt_paid_total']:.2f}"],
             ["إجمالي المصروفات الأخرى", "-", "-", "-", f"{breakdown['other_expenses_total']:.2f}"],
+            ["المصروفات الأخرى غير المسددة", "-", "-", "-", f"{breakdown['unpaid_other_expenses_total']:.2f}"],
             ["إجمالي الديون المسجلة", "-", "-", "-", f"{breakdown['debt_total']:.2f}"],
             ["إجمالي الإيراد", "-", "-", "-", f"{breakdown['total_revenue']:.2f}"],
             ["صافي الإيراد", "-", "-", "-", f"{breakdown['net_revenue']:.2f}"],

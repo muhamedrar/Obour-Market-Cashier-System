@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from flask import Blueprint, flash, redirect, render_template, request, session, url_for
 
 from models import get_session
@@ -62,6 +64,27 @@ def expenses():
         "date_to": date_to,
     }
     return render_template("expenses.html", **context)
+
+
+@expense_bp.route("/<int:expense_id>/confirm-payment", methods=["POST"])
+@admin_required
+def confirm_expense_payment(expense_id: int):
+    db_session = get_session()
+    expense = db_session.get(Expense, expense_id)
+    if not expense:
+        flash("المصروف غير موجود.", "error")
+        return redirect(url_for("expenses.expenses"))
+
+    if expense.is_paid:
+        flash("تم تأكيد سداد هذا المصروف مسبقاً.", "info")
+        return redirect(request.form.get("next") or url_for("expenses.expenses"))
+
+    expense.is_paid = True
+    expense.paid_at = datetime.now()
+    db_session.add(expense)
+    db_session.commit()
+    flash("تم تأكيد سداد المصروف.", "success")
+    return redirect(request.form.get("next") or url_for("expenses.expenses"))
 
 
 @expense_bp.route("/<int:expense_id>/delete", methods=["POST"])
