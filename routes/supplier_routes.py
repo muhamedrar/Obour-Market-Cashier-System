@@ -3,6 +3,7 @@ from sqlalchemy import or_
 
 from models import get_session
 from models.supplier import Supplier
+from models.supplier_payment import SupplierPayment
 from utils.helpers import (
     admin_required,
     apply_date_range,
@@ -13,6 +14,10 @@ from utils.helpers import (
     parse_float,
     parse_int,
     split_phone_numbers,
+    supplier_payment_status,
+    supplier_payment_summaries,
+    supplier_payment_total_for_supplier,
+    supplier_remaining_payout,
     supplier_units_sold,
     update_supplier_totals,
 )
@@ -81,6 +86,9 @@ def suppliers():
 
         supplier.remaining_units = supplier.units_count - sold_units
         update_supplier_totals(supplier)
+        if supplier_id and supplier_payment_total_for_supplier(db_session, supplier_id) > supplier.supplier_payout_total:
+            flash("لا يمكن تعديل المورد بحيث يصبح مستحقه أقل من المدفوع له بالفعل.", "error")
+            return redirect(url_for("suppliers.suppliers"))
         db_session.add(supplier)
         db_session.commit()
 
@@ -117,6 +125,22 @@ def suppliers():
         suppliers_query = suppliers_query.filter(Supplier.remaining_units <= 0)
 
     suppliers_list = suppliers_query.order_by(Supplier.date.desc(), Supplier.id.desc()).all()
+    payment_summaries = supplier_payment_summaries(db_session, [supplier.id for supplier in suppliers_list])
+    for supplier in suppliers_list:
+        payment_summary = payment_summaries.get(
+            supplier.id,
+            {"total_paid": 0.0, "last_payment_date": None},
+        )
+        supplier.total_paid_to_supplier = payment_summary["total_paid"]
+        supplier.remaining_payout_balance = supplier_remaining_payout(
+            supplier.supplier_payout_total,
+            payment_summary["total_paid"],
+        )
+        supplier.payment_status = supplier_payment_status(
+            supplier.supplier_payout_total,
+            payment_summary["total_paid"],
+        )
+        supplier.last_payment_date = payment_summary["last_payment_date"]
     context = {
         **build_base_context(db_session),
         "page_title": "الموردون",
@@ -130,6 +154,59 @@ def suppliers():
     return render_template("suppliers.html", **context)
 
 
+@supplier_bp.route("/<int:supplier_id>/pay", methods=["POST"])
+@admin_required
+def pay_supplier(supplier_id: int):
+    db_session = get_session()
+    supplier = db_session.get(Supplier, supplier_id)
+    if not supplier:
+        flash("المورد غير موجود.", "error")
+        return redirect(url_for("suppliers.suppliers"))
+
+    amount_paid = parse_float(request.form.get("amount_paid"))
+    if amount_paid <= 0:
+        flash("قيمة الدفعة يجب أن تكون أكبر من صفر.", "error")
+        return redirect(request.form.get("next") or url_for("suppliers.suppliers"))
+
+    total_paid = supplier_payment_total_for_supplier(db_session, supplier.id)
+    remaining_balance = supplier_remaining_payout(supplier.supplier_payout_total, total_paid)
+    if amount_paid > remaining_balance:
+        flash("قيمة الدفعة تتجاوز مستحق المورد المتبقي.", "error")
+        return redirect(request.form.get("next") or url_for("suppliers.suppliers"))
+
+    db_session.add(
+        SupplierPayment(
+            supplier_id=supplier.id,
+            amount_paid=amount_paid,
+            notes=request.form.get("notes", "").strip() or None,
+        )
+    )
+    db_session.commit()
+    flash("تم تسجيل دفعة المورد.", "success")
+    return redirect(request.form.get("next") or url_for("suppliers.suppliers"))
+
+
+@supplier_bp.route("/<int:supplier_id>/confirm-payment", methods=["POST"])
+@admin_required
+def confirm_supplier_payment(supplier_id: int):
+    db_session = get_session()
+    supplier = db_session.get(Supplier, supplier_id)
+    if not supplier:
+        flash("المورد غير موجود.", "error")
+        return redirect(url_for("suppliers.suppliers"))
+
+    total_paid = supplier_payment_total_for_supplier(db_session, supplier.id)
+    remaining_balance = supplier_remaining_payout(supplier.supplier_payout_total, total_paid)
+    if remaining_balance <= 0:
+        flash("تم سداد مستحق المورد بالكامل بالفعل.", "info")
+        return redirect(request.form.get("next") or url_for("suppliers.suppliers"))
+
+    db_session.add(SupplierPayment(supplier_id=supplier.id, amount_paid=remaining_balance))
+    db_session.commit()
+    flash("تم سداد كامل مستحق المورد.", "success")
+    return redirect(request.form.get("next") or url_for("suppliers.suppliers"))
+
+
 @supplier_bp.route("/<int:supplier_id>/receipt")
 def supplier_receipt(supplier_id: int):
     db_session = get_session()
@@ -138,6 +215,9 @@ def supplier_receipt(supplier_id: int):
     if not supplier:
         flash("المورد غير موجود.", "error")
         return redirect(url_for("suppliers.suppliers"))
+    total_paid = supplier_payment_total_for_supplier(db_session, supplier.id)
+    remaining_balance = supplier_remaining_payout(supplier.supplier_payout_total, total_paid)
+    payment_status = supplier_payment_status(supplier.supplier_payout_total, total_paid)
 
     context = {
         **build_base_context(db_session),
@@ -162,6 +242,9 @@ def supplier_receipt(supplier_id: int):
             ("نسبة ربح المحل", f"{supplier.supplier_profit_percentage:.2f}%"),
             ("ربح المحل من المورد", supplier.company_profit_total),
             ("مستحق المورد", supplier.supplier_payout_total),
+            ("المدفوع للمورد", total_paid),
+            ("المتبقي للمورد", remaining_balance),
+            ("حالة السداد", "مدفوع" if payment_status == "paid" else ("مدفوع جزئياً" if payment_status == "partial" else "غير مدفوع")),
             ("سعر الوحدة", supplier.price_per_unit),
             ("إجمالي الوزن", f"{supplier.total_kilograms:.2f} كجم"),
             ("الوحدات المباعة", str(supplier.units_count - supplier.remaining_units)),
@@ -181,6 +264,9 @@ def supplier_receipt_pdf(supplier_id: int):
     if not supplier:
         flash("المورد غير موجود.", "error")
         return redirect(url_for("suppliers.suppliers"))
+    total_paid = supplier_payment_total_for_supplier(db_session, supplier.id)
+    remaining_balance = supplier_remaining_payout(supplier.supplier_payout_total, total_paid)
+    payment_status = supplier_payment_status(supplier.supplier_payout_total, total_paid)
 
     pdf = build_pdf(
         "إيصال مورد",
@@ -193,6 +279,9 @@ def supplier_receipt_pdf(supplier_id: int):
             f"نسبة ربح المحل: {supplier.supplier_profit_percentage:.2f}%",
             f"ربح المحل: {supplier.company_profit_total:.2f}",
             f"مستحق المورد: {supplier.supplier_payout_total:.2f}",
+            f"المدفوع للمورد: {total_paid:.2f}",
+            f"المتبقي للمورد: {remaining_balance:.2f}",
+            f"حالة السداد: {'مدفوع' if payment_status == 'paid' else ('مدفوع جزئياً' if payment_status == 'partial' else 'غير مدفوع')}",
         ],
         ["الصنف", "الدرجة", "الوحدات", "كجم/وحدة", "الإجمالي"],
         [[
@@ -219,6 +308,10 @@ def delete_supplier(supplier_id: int):
     supplier = db_session.get(Supplier, supplier_id)
     if not supplier:
         flash("المورد غير موجود.", "error")
+        return redirect(url_for("suppliers.suppliers"))
+
+    if supplier_payment_total_for_supplier(db_session, supplier.id) > 0:
+        flash("لا يمكن حذف مورد تم تسجيل دفعات له.", "error")
         return redirect(url_for("suppliers.suppliers"))
 
     if supplier_units_sold(db_session, supplier) > 0:

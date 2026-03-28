@@ -226,7 +226,6 @@ def retail_receipt(transaction_id: int):
             ]
         ],
         "summary_lines": [
-            ("نوع الخصم", "من العمولة" if transaction.discount_mode == "commission" else "من سعر الوحدة"),
             ("متوسط سعر المورد", transaction.original_price_per_unit),
             (
                 "قيمة البضاعة" if transaction.discount_mode == "commission" else "قيمة البضاعة بعد الخصم",

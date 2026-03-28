@@ -112,6 +112,7 @@ def init_app(app):
     from models.settings import Settings
     from models.special_retailer import SpecialRetailer
     from models.supplier import Supplier
+    from models.supplier_payment import SupplierPayment
 
     Base.metadata.create_all(bind=engine)
     ensure_sqlite_columns()

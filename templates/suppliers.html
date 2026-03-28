@@ -106,12 +106,15 @@
                         <th>الدرجة</th>
                         <th>الكمية</th>
                         <th>كجم/وحدة</th>
-                        <th>المتبقي</th>
+                        <th>متبقي المخزون</th>
                         <th>الإجمالي</th>
                         <th>نسبة المحل</th>
                         <th>ربح المحل</th>
                         <th>مستحق المورد</th>
-                        <th>الحالة</th>
+                        <th>المدفوع للمورد</th>
+                        <th>متبقي للمورد</th>
+                        <th>حالة السداد</th>
+                        <th>حالة المخزون</th>
                         <th>إجراءات</th>
                     </tr>
                 </thead>
@@ -130,6 +133,17 @@
                             <td>{{ supplier.company_profit_total|currency }}</td>
                             <td>{{ supplier.supplier_payout_total|currency }}</td>
                             <td>
+                                {{ supplier.total_paid_to_supplier|currency }}
+                            </td>
+                            <td>
+                                {{ supplier.remaining_payout_balance|currency }}
+                            </td>
+                            <td>
+                                <span class="status {{ supplier.payment_status }}">
+                                    {{ "مدفوع" if supplier.payment_status == "paid" else ("مدفوع جزئياً" if supplier.payment_status == "partial" else "غير مدفوع") }}
+                                </span>
+                            </td>
+                            <td>
                                 <span class="status {{ 'paid' if supplier.is_cleared else 'partial' }}">
                                     {{ "تمت التصفية" if supplier.is_cleared else "نشط" }}
                                 </span>
@@ -137,6 +151,17 @@
                             <td class="actions-cell">
                                 <a class="btn btn-small btn-secondary" href="{{ url_for('suppliers.supplier_receipt', supplier_id=supplier.id) }}">معاينة</a>
                                 {% if is_admin %}
+                                    {% if supplier.payment_status != "paid" %}
+                                        <form class="expense-pay-form" method="post" action="{{ url_for('suppliers.pay_supplier', supplier_id=supplier.id) }}">
+                                            <input type="hidden" name="next" value="{{ request.full_path if request.query_string else request.path }}">
+                                            <input type="number" min="0.01" max="{{ supplier.remaining_payout_balance }}" step="0.01" name="amount_paid" placeholder="دفعة" required>
+                                            <button class="btn btn-small btn-secondary" type="submit">سداد جزئي</button>
+                                        </form>
+                                        <form method="post" action="{{ url_for('suppliers.confirm_supplier_payment', supplier_id=supplier.id) }}">
+                                            <input type="hidden" name="next" value="{{ request.full_path if request.query_string else request.path }}">
+                                            <button class="btn btn-small btn-secondary" type="submit" data-confirm="تأكيد سداد باقي مستحق المورد؟">سداد كامل</button>
+                                        </form>
+                                    {% endif %}
                                     <a class="btn btn-small btn-ghost" href="{{ url_for('suppliers.suppliers', edit=supplier.id) }}">تعديل</a>
                                     <form method="post" action="{{ url_for('suppliers.delete_supplier', supplier_id=supplier.id) }}">
                                         <button class="btn btn-small btn-danger" type="submit" data-confirm="هل تريد حذف المورد؟">حذف</button>
@@ -145,7 +170,7 @@
                             </td>
                         </tr>
                     {% else %}
-                        <tr><td colspan="13" class="empty-state">لا توجد نتائج مطابقة حالياً.</td></tr>
+                        <tr><td colspan="16" class="empty-state">لا توجد نتائج مطابقة حالياً.</td></tr>
                     {% endfor %}
                 </tbody>
             </table>

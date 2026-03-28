@@ -224,7 +224,6 @@ def special_retailer_receipt(retailer_id: int):
             f"{retailer.total_price:.2f}",
         ]],
         "summary_lines": [
-            ("نوع الخصم", "من العمولة" if retailer.discount_mode == "commission" else "من سعر الوحدة"),
             (
                 "قيمة البضاعة" if retailer.discount_mode == "commission" else "قيمة البضاعة بعد الخصم",
                 round(retailer.price_per_unit * retailer.units_count, 2)

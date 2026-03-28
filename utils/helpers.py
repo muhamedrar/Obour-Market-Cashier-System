@@ -15,6 +15,7 @@ from models.retail_transaction import RetailTransaction
 from models.settings import Settings
 from models.special_retailer import SpecialRetailer
 from models.supplier import Supplier
+from models.supplier_payment import SupplierPayment
 
 
 def parse_filter_datetime(value: str | None, end_of_day: bool = False) -> datetime | None:
@@ -114,6 +115,75 @@ def supplier_payout_total(total_price: float, supplier_profit_percentage: float)
 def supplier_payout_unit_price(price_per_unit: float, supplier_profit_percentage: float) -> float:
     percentage = min(max(float(supplier_profit_percentage or 0), 0.0), 100.0)
     return round(float(price_per_unit or 0) * (1 - (percentage / 100)), 2)
+
+
+def supplier_payment_total_for_supplier(db_session, supplier_id: int) -> float:
+    total = db_session.scalar(
+        select(func.coalesce(func.sum(SupplierPayment.amount_paid), 0)).where(
+            SupplierPayment.supplier_id == supplier_id
+        )
+    )
+    return round(float(total or 0), 2)
+
+
+def supplier_payment_summaries(db_session, supplier_ids: list[int]) -> dict[int, dict[str, float | str | datetime | None]]:
+    if not supplier_ids:
+        return {}
+
+    payment_rows = (
+        db_session.query(
+            SupplierPayment.supplier_id,
+            func.coalesce(func.sum(SupplierPayment.amount_paid), 0).label("total_paid"),
+            func.max(SupplierPayment.payment_date).label("last_payment_date"),
+        )
+        .filter(SupplierPayment.supplier_id.in_(supplier_ids))
+        .group_by(SupplierPayment.supplier_id)
+        .all()
+    )
+    payment_map = {
+        int(row.supplier_id): {
+            "total_paid": round(float(row.total_paid or 0), 2),
+            "last_payment_date": row.last_payment_date,
+        }
+        for row in payment_rows
+    }
+
+    summaries = {}
+    for supplier_id in supplier_ids:
+        summary = payment_map.get(supplier_id, {"total_paid": 0.0, "last_payment_date": None})
+        total_paid = round(float(summary["total_paid"] or 0), 2)
+        summaries[supplier_id] = {
+            "total_paid": total_paid,
+            "last_payment_date": summary["last_payment_date"],
+        }
+    return summaries
+
+
+def supplier_payment_status(supplier_payout_total: float, total_paid: float) -> str:
+    payout_total = round(max(float(supplier_payout_total or 0), 0.0), 2)
+    paid_total = round(min(max(float(total_paid or 0), 0.0), payout_total), 2)
+    if payout_total > 0 and paid_total >= payout_total:
+        return "paid"
+    if paid_total > 0:
+        return "partial"
+    return "unpaid"
+
+
+def supplier_remaining_payout(supplier_payout_total: float, total_paid: float) -> float:
+    payout_total = round(max(float(supplier_payout_total or 0), 0.0), 2)
+    paid_total = round(min(max(float(total_paid or 0), 0.0), payout_total), 2)
+    return round(max(payout_total - paid_total, 0.0), 2)
+
+
+def supplier_payments_total(
+    db_session,
+    date_from: str | None = None,
+    date_to: str | None = None,
+) -> float:
+    query = select(func.coalesce(func.sum(SupplierPayment.amount_paid), 0))
+    query = apply_date_range(query, SupplierPayment.payment_date, date_from, date_to)
+    total = db_session.scalar(query)
+    return round(float(total or 0), 2)
 
 
 def normalize_shift_cutoff_time(value: str | None, default: str = "00:00") -> str:
@@ -560,6 +630,7 @@ def revenue_breakdown(db_session, date_from: str | None = None, date_to: str | N
     debt_total_query = apply_date_range(debt_total_query, SpecialRetailer.date, date_from, date_to)
     debt_total = float(db_session.scalar(debt_total_query) or 0)
     supplier_costs = supplier_cost_total(db_session, date_from, date_to)
+    supplier_paid_total = supplier_payments_total(db_session, date_from, date_to)
     debt_paid_total = received_payments_total(db_session, date_from, date_to)
     retail_count_query = select(func.count(RetailTransaction.id))
     retail_count_query = apply_date_range(retail_count_query, RetailTransaction.date, date_from, date_to)
@@ -567,14 +638,16 @@ def revenue_breakdown(db_session, date_from: str | None = None, date_to: str | N
     debt_count_query = apply_date_range(debt_count_query, SpecialRetailer.date, date_from, date_to)
     sales_count = (db_session.scalar(retail_count_query) or 0) + (db_session.scalar(debt_count_query) or 0)
 
-    total_revenue = round(retail_total + debt_total, 2)
-    net_revenue = round(total_revenue - supplier_costs - other_expenses_total, 2)
-    current_revenue = round(retail_total + debt_paid_total - paid_other_expenses_total, 2)
+    gross_sales_total = retail_total + debt_total
+    total_revenue = round(gross_sales_total - supplier_paid_total, 2)
+    net_revenue = round(gross_sales_total - supplier_costs - other_expenses_total, 2)
+    current_revenue = round(retail_total + debt_paid_total - paid_other_expenses_total - supplier_paid_total, 2)
 
     return {
         "commission_total": round(float(commission_total), 2),
         "admin_fees_total": round(float(admin_fees_total), 2),
         "supplier_cost_total": supplier_costs,
+        "supplier_paid_total": round(supplier_paid_total, 2),
         "other_expenses_total": round(other_expenses_total, 2),
         "paid_other_expenses_total": round(paid_other_expenses_total, 2),
         "unpaid_other_expenses_total": round(unpaid_other_expenses_total, 2),

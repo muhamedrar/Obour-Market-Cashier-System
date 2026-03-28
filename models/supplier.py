@@ -26,6 +26,12 @@ class Supplier(Base):
     allocations = relationship(
         "InventoryAllocation", back_populates="supplier", cascade="all, delete-orphan"
     )
+    payments = relationship(
+        "SupplierPayment",
+        back_populates="supplier",
+        cascade="all, delete-orphan",
+        order_by="SupplierPayment.payment_date.desc()",
+    )
 
     @property
     def company_profit_total(self) -> float:
