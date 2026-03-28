@@ -35,6 +35,10 @@
                 <span>سعر الوحدة</span>
                 <input type="number" min="0" step="0.01" name="price_per_unit" value="{{ edit_supplier.price_per_unit if edit_supplier else '' }}" required>
             </label>
+            <label>
+                <span>كجم لكل وحدة</span>
+                <input type="number" min="0" step="0.01" name="kilograms_per_unit" value="{{ edit_supplier.kilograms_per_unit if edit_supplier else '' }}" required>
+            </label>
             {% if is_admin %}
                 <label>
                     <span>نسبة ربح المحل من المورد (%)</span>
@@ -86,6 +90,7 @@
                         <th>الصنف</th>
                         <th>الدرجة</th>
                         <th>الكمية</th>
+                        <th>كجم/وحدة</th>
                         <th>المتبقي</th>
                         <th>الإجمالي</th>
                         <th>نسبة المحل</th>
@@ -103,6 +108,7 @@
                             <td>{{ supplier.fruit_name }}</td>
                             <td>{{ supplier.class_number }}</td>
                             <td>{{ supplier.units_count }}</td>
+                            <td>{{ supplier.kilograms_per_unit }}</td>
                             <td>{{ supplier.remaining_units }}</td>
                             <td>{{ supplier.total_price|currency }}</td>
                             <td>{{ supplier.supplier_profit_percentage }}%</td>
@@ -115,8 +121,8 @@
                             </td>
                             <td class="actions-cell">
                                 <a class="btn btn-small btn-secondary" href="{{ url_for('suppliers.supplier_receipt', supplier_id=supplier.id) }}">معاينة</a>
-                                <a class="btn btn-small btn-ghost" href="{{ url_for('suppliers.suppliers', edit=supplier.id) }}">تعديل</a>
                                 {% if is_admin %}
+                                    <a class="btn btn-small btn-ghost" href="{{ url_for('suppliers.suppliers', edit=supplier.id) }}">تعديل</a>
                                     <form method="post" action="{{ url_for('suppliers.delete_supplier', supplier_id=supplier.id) }}">
                                         <button class="btn btn-small btn-danger" type="submit" data-confirm="هل تريد حذف المورد؟">حذف</button>
                                     </form>
@@ -124,7 +130,7 @@
                             </td>
                         </tr>
                     {% else %}
-                        <tr><td colspan="12" class="empty-state">لا توجد نتائج مطابقة حالياً.</td></tr>
+                        <tr><td colspan="13" class="empty-state">لا توجد نتائج مطابقة حالياً.</td></tr>
                     {% endfor %}
                 </tbody>
             </table>

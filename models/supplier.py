@@ -17,6 +17,7 @@ class Supplier(Base):
     remaining_units: Mapped[int] = mapped_column(Integer, nullable=False)
     class_number: Mapped[str] = mapped_column(String(50), nullable=False)
     price_per_unit: Mapped[float] = mapped_column(Float, nullable=False)
+    kilograms_per_unit: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
     supplier_profit_percentage: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
     total_price: Mapped[float] = mapped_column(Float, nullable=False)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -37,3 +38,11 @@ class Supplier(Base):
     @property
     def supplier_payout_per_unit(self) -> float:
         return round(self.price_per_unit * (1 - (self.supplier_profit_percentage / 100)), 2)
+
+    @property
+    def total_kilograms(self) -> float:
+        return round(self.units_count * self.kilograms_per_unit, 2)
+
+    @property
+    def remaining_kilograms(self) -> float:
+        return round(self.remaining_units * self.kilograms_per_unit, 2)

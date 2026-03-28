@@ -43,6 +43,10 @@ def ensure_sqlite_columns():
 
     if "suppliers" in inspector.get_table_names():
         supplier_columns = {column["name"] for column in inspector.get_columns("suppliers")}
+        if "kilograms_per_unit" not in supplier_columns:
+            statements.append(
+                "ALTER TABLE suppliers ADD COLUMN kilograms_per_unit FLOAT NOT NULL DEFAULT 0"
+            )
         if "supplier_profit_percentage" not in supplier_columns:
             statements.append(
                 "ALTER TABLE suppliers ADD COLUMN supplier_profit_percentage FLOAT NOT NULL DEFAULT 0"

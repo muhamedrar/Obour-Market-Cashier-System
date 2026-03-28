@@ -30,6 +30,10 @@ def suppliers():
 
     if request.method == "POST":
         supplier_id = parse_int(request.form.get("supplier_id"))
+        if supplier_id and not is_admin_user:
+            flash("تعديل سجلات الموردين يحتاج صلاحية المسؤول.", "error")
+            return redirect(url_for("admin.login", next=url_for("suppliers.suppliers")))
+
         supplier = db_session.get(Supplier, supplier_id) if supplier_id else Supplier()
 
         supplier.date = parse_date(request.form.get("date"))
@@ -38,6 +42,7 @@ def suppliers():
         supplier.class_number = request.form.get("class_number", "").strip()
         supplier.units_count = parse_int(request.form.get("units_count"))
         supplier.price_per_unit = parse_float(request.form.get("price_per_unit"))
+        supplier.kilograms_per_unit = parse_float(request.form.get("kilograms_per_unit"))
         supplier.supplier_profit_percentage = (
             parse_float(
                 request.form.get("supplier_profit_percentage"),
@@ -56,8 +61,8 @@ def suppliers():
             flash("يرجى إدخال اسم المورد والصنف والدرجة.", "error")
             return redirect(url_for("suppliers.suppliers"))
 
-        if supplier.units_count <= 0 or supplier.price_per_unit < 0:
-            flash("عدد الوحدات والسعر يجب أن يكونا صالحين.", "error")
+        if supplier.units_count <= 0 or supplier.price_per_unit < 0 or supplier.kilograms_per_unit < 0:
+            flash("عدد الوحدات والسعر والوزن لكل وحدة يجب أن تكون قيمهم صالحة.", "error")
             return redirect(url_for("suppliers.suppliers"))
         if supplier.supplier_profit_percentage < 0 or supplier.supplier_profit_percentage > 100:
             flash("نسبة ربح المحل من المورد يجب أن تكون بين 0 و100.", "error")
@@ -79,6 +84,9 @@ def suppliers():
     edit_supplier = None
     edit_id = parse_int(request.args.get("edit"))
     if edit_id:
+        if not is_admin_user:
+            flash("تعديل سجلات الموردين يحتاج صلاحية المسؤول.", "error")
+            return redirect(url_for("admin.login", next=url_for("suppliers.suppliers")))
         edit_supplier = db_session.get(Supplier, edit_id)
 
     search_query = request.args.get("q", "").strip()
@@ -136,18 +144,20 @@ def supplier_receipt(supplier_id: int):
             f"المورد: {supplier.supplier_name}",
             f"التاريخ: {supplier.date.strftime('%Y-%m-%d %H:%M')}",
         ],
-        "table_headers": ["الصنف", "الدرجة", "الوحدات", "سعر الوحدة", "الإجمالي الخام"],
+        "table_headers": ["الصنف", "الدرجة", "الوحدات", "كجم/وحدة", "الإجمالي الخام"],
         "table_rows": [[
             supplier.fruit_name,
             supplier.class_number,
             str(supplier.units_count),
-            f"{supplier.price_per_unit:.2f}",
+            f"{supplier.kilograms_per_unit:.2f}",
             f"{supplier.total_price:.2f}",
         ]],
         "summary_lines": [
             ("نسبة ربح المحل", f"{supplier.supplier_profit_percentage:.2f}%"),
             ("ربح المحل من المورد", supplier.company_profit_total),
             ("مستحق المورد", supplier.supplier_payout_total),
+            ("سعر الوحدة", supplier.price_per_unit),
+            ("إجمالي الوزن", f"{supplier.total_kilograms:.2f} كجم"),
             ("الوحدات المباعة", str(supplier.units_count - supplier.remaining_units)),
             ("الوحدات المتبقية", str(supplier.remaining_units)),
         ],
@@ -173,16 +183,17 @@ def supplier_receipt_pdf(supplier_id: int):
             *[f"الهاتف: {phone}" for phone in split_phone_numbers(settings.phone_number)],
             f"المورد: {supplier.supplier_name}",
             f"التاريخ: {supplier.date.strftime('%Y-%m-%d %H:%M')}",
+            f"كجم لكل وحدة: {supplier.kilograms_per_unit:.2f}",
             f"نسبة ربح المحل: {supplier.supplier_profit_percentage:.2f}%",
             f"ربح المحل: {supplier.company_profit_total:.2f}",
             f"مستحق المورد: {supplier.supplier_payout_total:.2f}",
         ],
-        ["الصنف", "الدرجة", "الوحدات", "سعر الوحدة", "الإجمالي"],
+        ["الصنف", "الدرجة", "الوحدات", "كجم/وحدة", "الإجمالي"],
         [[
             supplier.fruit_name,
             supplier.class_number,
             str(supplier.units_count),
-            f"{supplier.price_per_unit:.2f}",
+            f"{supplier.kilograms_per_unit:.2f}",
             f"{supplier.total_price:.2f}",
         ]],
         paper="thermal",
