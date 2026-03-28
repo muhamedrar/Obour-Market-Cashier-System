@@ -227,3 +227,26 @@ document.querySelectorAll("[data-confirm]").forEach((button) => {
         }
     });
 });
+
+document.querySelectorAll("[data-supplier-form]").forEach((form) => {
+    const kilogramsPerUnitInput = form.querySelector('input[name="kilograms_per_unit"]');
+    const pricePerKilogramInput = form.querySelector('input[name="price_per_kilogram"]');
+    const pricePerUnitInput = form.querySelector('input[name="price_per_unit"]');
+
+    const syncUnitPrice = () => {
+        if (!kilogramsPerUnitInput || !pricePerKilogramInput || !pricePerUnitInput) {
+            return;
+        }
+
+        const kilogramsPerUnit = Number(kilogramsPerUnitInput.value || 0);
+        const pricePerKilogram = Number(pricePerKilogramInput.value || 0);
+
+        if (kilogramsPerUnit > 0 && pricePerKilogram > 0) {
+            pricePerUnitInput.value = (kilogramsPerUnit * pricePerKilogram).toFixed(2);
+        }
+    };
+
+    kilogramsPerUnitInput?.addEventListener("input", syncUnitPrice);
+    pricePerKilogramInput?.addEventListener("input", syncUnitPrice);
+    syncUnitPrice();
+});

@@ -41,8 +41,14 @@ def suppliers():
         supplier.fruit_name = request.form.get("fruit_name", "").strip()
         supplier.class_number = request.form.get("class_number", "").strip()
         supplier.units_count = parse_int(request.form.get("units_count"))
-        supplier.price_per_unit = parse_float(request.form.get("price_per_unit"))
         supplier.kilograms_per_unit = parse_float(request.form.get("kilograms_per_unit"))
+        price_per_unit = parse_float(request.form.get("price_per_unit"))
+        price_per_kilogram = parse_float(request.form.get("price_per_kilogram"))
+        supplier.price_per_unit = (
+            round(price_per_kilogram * supplier.kilograms_per_unit, 2)
+            if price_per_kilogram > 0 and supplier.kilograms_per_unit > 0
+            else price_per_unit
+        )
         supplier.supplier_profit_percentage = (
             parse_float(
                 request.form.get("supplier_profit_percentage"),
@@ -61,7 +67,12 @@ def suppliers():
             flash("يرجى إدخال اسم المورد والصنف والدرجة.", "error")
             return redirect(url_for("suppliers.suppliers"))
 
-        if supplier.units_count <= 0 or supplier.price_per_unit < 0 or supplier.kilograms_per_unit < 0:
+        if (
+            supplier.units_count <= 0
+            or supplier.price_per_unit < 0
+            or supplier.kilograms_per_unit < 0
+            or price_per_kilogram < 0
+        ):
             flash("عدد الوحدات والسعر والوزن لكل وحدة يجب أن تكون قيمهم صالحة.", "error")
             return redirect(url_for("suppliers.suppliers"))
         if supplier.supplier_profit_percentage < 0 or supplier.supplier_profit_percentage > 100:

@@ -9,7 +9,7 @@
                 <p>المخزون يتم تحديثه تلقائياً عند البيع ولا يمكن أن يصبح سالباً.</p>
             </div>
         </div>
-        <form class="form-grid" method="post">
+        <form class="form-grid supplier-form-grid" method="post" data-supplier-form>
             <input type="hidden" name="supplier_id" value="{{ edit_supplier.id if edit_supplier else '' }}">
             <label>
                 <span>التاريخ</span>
@@ -27,20 +27,30 @@
                 <span>الدرجة</span>
                 <input type="text" name="class_number" value="{{ edit_supplier.class_number if edit_supplier else '' }}" required>
             </label>
-            <label>
+            <label class="compact-field">
                 <span>عدد الوحدات</span>
                 <input type="number" min="1" name="units_count" value="{{ edit_supplier.units_count if edit_supplier else '' }}" required>
             </label>
-            <label>
+            <label class="compact-field">
+                <span>سعر الكيلو</span>
+                <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    name="price_per_kilogram"
+                    value="{% if edit_supplier and edit_supplier.kilograms_per_unit %}{{ '%.2f'|format(edit_supplier.price_per_unit / edit_supplier.kilograms_per_unit) }}{% endif %}"
+                >
+            </label>
+            <label class="compact-field">
                 <span>سعر الوحدة</span>
                 <input type="number" min="0" step="0.01" name="price_per_unit" value="{{ edit_supplier.price_per_unit if edit_supplier else '' }}" required>
             </label>
-            <label>
+            <label class="compact-field">
                 <span>كجم لكل وحدة</span>
                 <input type="number" min="0" step="0.01" name="kilograms_per_unit" value="{{ edit_supplier.kilograms_per_unit if edit_supplier else '' }}" required>
             </label>
             {% if is_admin %}
-                <label>
+                <label class="compact-field">
                     <span>نسبة ربح المحل من المورد (%)</span>
                     <input type="number" min="0" max="100" step="0.01" name="supplier_profit_percentage" value="{{ edit_supplier.supplier_profit_percentage if edit_supplier else settings.supplier_profit_percentage }}" required>
                 </label>
@@ -82,7 +92,7 @@
             </form>
         </div>
         <div class="table-wrap records-scroll">
-            <table>
+            <table class="supplier-table">
                 <thead>
                     <tr>
                         <th>التاريخ</th>
