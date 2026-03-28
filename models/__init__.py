@@ -41,6 +41,20 @@ def ensure_sqlite_columns():
                 "ALTER TABLE retail_transactions ADD COLUMN discount_mode VARCHAR(20) NOT NULL DEFAULT 'commission'"
             )
 
+    if "suppliers" in inspector.get_table_names():
+        supplier_columns = {column["name"] for column in inspector.get_columns("suppliers")}
+        if "supplier_profit_percentage" not in supplier_columns:
+            statements.append(
+                "ALTER TABLE suppliers ADD COLUMN supplier_profit_percentage FLOAT NOT NULL DEFAULT 0"
+            )
+
+    if "settings" in inspector.get_table_names():
+        settings_columns = {column["name"] for column in inspector.get_columns("settings")}
+        if "supplier_profit_percentage" not in settings_columns:
+            statements.append(
+                "ALTER TABLE settings ADD COLUMN supplier_profit_percentage FLOAT NOT NULL DEFAULT 0"
+            )
+
     if not statements:
         return
 

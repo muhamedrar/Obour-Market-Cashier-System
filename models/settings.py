@@ -12,4 +12,5 @@ class Settings(Base):
     phone_number: Mapped[str] = mapped_column(String(255), nullable=False)
     commission_per_unit: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
     admin_expense: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
+    supplier_profit_percentage: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
     admin_password: Mapped[str] = mapped_column(String(255), nullable=False)

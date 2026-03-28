@@ -17,6 +17,7 @@ class Supplier(Base):
     remaining_units: Mapped[int] = mapped_column(Integer, nullable=False)
     class_number: Mapped[str] = mapped_column(String(50), nullable=False)
     price_per_unit: Mapped[float] = mapped_column(Float, nullable=False)
+    supplier_profit_percentage: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
     total_price: Mapped[float] = mapped_column(Float, nullable=False)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     is_cleared: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
@@ -24,3 +25,15 @@ class Supplier(Base):
     allocations = relationship(
         "InventoryAllocation", back_populates="supplier", cascade="all, delete-orphan"
     )
+
+    @property
+    def company_profit_total(self) -> float:
+        return round(self.total_price * (self.supplier_profit_percentage / 100), 2)
+
+    @property
+    def supplier_payout_total(self) -> float:
+        return round(self.total_price - self.company_profit_total, 2)
+
+    @property
+    def supplier_payout_per_unit(self) -> float:
+        return round(self.price_per_unit * (1 - (self.supplier_profit_percentage / 100)), 2)

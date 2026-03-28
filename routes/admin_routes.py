@@ -301,6 +301,10 @@ def admin_panel():
         settings.admin_expense = parse_float(
             request.form.get("admin_expense"), settings.admin_expense
         )
+        settings.supplier_profit_percentage = parse_float(
+            request.form.get("supplier_profit_percentage"),
+            settings.supplier_profit_percentage,
+        )
 
         new_password = request.form.get("new_password", "").strip()
         if new_password:

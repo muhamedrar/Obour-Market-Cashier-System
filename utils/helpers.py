@@ -4,7 +4,7 @@ from datetime import date, datetime, time
 from functools import wraps
 
 from flask import flash, redirect, request, session, url_for
-from sqlalchemy import case, func, select
+from sqlalchemy import and_, case, func, select
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from config import Config
@@ -92,6 +92,20 @@ def update_supplier_totals(supplier: Supplier) -> None:
     sync_supplier_status(supplier)
 
 
+def supplier_company_profit(total_price: float, supplier_profit_percentage: float) -> float:
+    percentage = min(max(float(supplier_profit_percentage or 0), 0.0), 100.0)
+    return round(float(total_price or 0) * (percentage / 100), 2)
+
+
+def supplier_payout_total(total_price: float, supplier_profit_percentage: float) -> float:
+    return round(float(total_price or 0) - supplier_company_profit(total_price, supplier_profit_percentage), 2)
+
+
+def supplier_payout_unit_price(price_per_unit: float, supplier_profit_percentage: float) -> float:
+    percentage = min(max(float(supplier_profit_percentage or 0), 0.0), 100.0)
+    return round(float(price_per_unit or 0) * (1 - (percentage / 100)), 2)
+
+
 def effective_commission_per_unit(commission_per_unit: float, discount_per_unit: float) -> float:
     return max(round(commission_per_unit - discount_per_unit, 2), 0.0)
 
@@ -171,6 +185,7 @@ def get_or_create_settings(db_session) -> Settings:
         phone_number=Config.DEFAULT_PHONE_NUMBER,
         commission_per_unit=Config.DEFAULT_COMMISSION,
         admin_expense=Config.DEFAULT_ADMIN_EXPENSE,
+        supplier_profit_percentage=Config.DEFAULT_SUPPLIER_PROFIT_PERCENTAGE,
         admin_password=generate_password_hash(Config.DEFAULT_ADMIN_PASSWORD),
     )
     db_session.add(settings)
@@ -365,15 +380,38 @@ def supplier_cost_total(
     date_from: str | None = None,
     date_to: str | None = None,
 ) -> float:
-    retail_query = select(
-        func.coalesce(func.sum(RetailTransaction.original_price_per_unit * RetailTransaction.units_count), 0)
+    payout_expression = (
+        InventoryAllocation.units_count
+        * Supplier.price_per_unit
+        * (1 - (Supplier.supplier_profit_percentage / 100))
+    )
+    retail_query = (
+        db_session.query(func.coalesce(func.sum(payout_expression), 0))
+        .select_from(InventoryAllocation)
+        .join(Supplier, InventoryAllocation.supplier_id == Supplier.id)
+        .join(
+            RetailTransaction,
+            and_(
+                InventoryAllocation.transaction_type == "retail",
+                InventoryAllocation.transaction_id == RetailTransaction.id,
+            ),
+        )
     )
     retail_query = apply_date_range(retail_query, RetailTransaction.date, date_from, date_to)
-    debt_query = select(
-        func.coalesce(func.sum(SpecialRetailer.original_price_per_unit * SpecialRetailer.units_count), 0)
+    debt_query = (
+        db_session.query(func.coalesce(func.sum(payout_expression), 0))
+        .select_from(InventoryAllocation)
+        .join(Supplier, InventoryAllocation.supplier_id == Supplier.id)
+        .join(
+            SpecialRetailer,
+            and_(
+                InventoryAllocation.transaction_type == "special",
+                InventoryAllocation.transaction_id == SpecialRetailer.id,
+            ),
+        )
     )
     debt_query = apply_date_range(debt_query, SpecialRetailer.date, date_from, date_to)
-    total = float(db_session.scalar(retail_query) or 0) + float(db_session.scalar(debt_query) or 0)
+    total = float(retail_query.scalar() or 0) + float(debt_query.scalar() or 0)
     return round(total, 2)
 
 
