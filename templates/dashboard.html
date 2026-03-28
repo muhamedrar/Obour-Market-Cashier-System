@@ -69,6 +69,7 @@
                     <tr>
                         <th>الصنف</th>
                         <th>الدرجة</th>
+                        <th>كجم/وحدة</th>
                         <th>الوحدات المتبقية</th>
                         <th>متوسط السعر</th>
                         <th>القيمة الإجمالية</th>
@@ -79,12 +80,13 @@
                         <tr>
                             <td>{{ row.fruit_name }}</td>
                             <td>{{ row.class_number }}</td>
+                            <td>{{ '%.2f'|format(row.kilograms_per_unit) }}</td>
                             <td>{{ row.remaining_units }}</td>
                             <td>{{ row.avg_price|currency }}</td>
                             <td>{{ row.total_value|currency }}</td>
                         </tr>
                     {% else %}
-                        <tr><td colspan="5" class="empty-state">لا يوجد مخزون مطابق حالياً.</td></tr>
+                        <tr><td colspan="6" class="empty-state">لا يوجد مخزون مطابق حالياً.</td></tr>
                     {% endfor %}
                 </tbody>
             </table>
@@ -104,7 +106,7 @@
         <div class="mini-list records-scroll-list">
             {% for item in recent_retail %}
                 <a class="mini-item" href="{{ url_for('retail.retail_receipt', transaction_id=item.id) }}">
-                    <strong>{{ item.fruit_name }} - درجة {{ item.class_number }}</strong>
+                    <strong>{{ item.fruit_name }} - درجة {{ item.class_number }} - {{ '%.2f'|format(item.kilograms_per_unit) }} كجم</strong>
                     <span>{{ item.units_count }} وحدة | {{ item.final_price|currency }} | {{ item.date|date_ar }}</span>
                 </a>
             {% else %}
@@ -125,7 +127,7 @@
             {% for item in recent_debt %}
                 <a class="mini-item" href="{{ url_for('payments.payments', retailer=item.id) }}">
                     <strong>{{ item.retailer_name }}</strong>
-                    <span>{{ item.fruit_name }} | المتبقي {{ item.remaining_balance|currency }} | {{ item.date|date_ar }}</span>
+                    <span>{{ item.fruit_name }} | {{ '%.2f'|format(item.kilograms_per_unit) }} كجم | المتبقي {{ item.remaining_balance|currency }} | {{ item.date|date_ar }}</span>
                 </a>
             {% else %}
                 <div class="empty-state">لا توجد حركات آجل بعد.</div>

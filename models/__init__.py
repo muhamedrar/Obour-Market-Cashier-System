@@ -21,6 +21,10 @@ def ensure_sqlite_columns():
 
     if "special_retailers" in inspector.get_table_names():
         special_columns = {column["name"] for column in inspector.get_columns("special_retailers")}
+        if "kilograms_per_unit" not in special_columns:
+            statements.append(
+                "ALTER TABLE special_retailers ADD COLUMN kilograms_per_unit FLOAT NOT NULL DEFAULT 0"
+            )
         if "commission_per_unit" not in special_columns:
             statements.append(
                 "ALTER TABLE special_retailers ADD COLUMN commission_per_unit FLOAT NOT NULL DEFAULT 0"
@@ -33,13 +37,23 @@ def ensure_sqlite_columns():
             statements.append(
                 "ALTER TABLE special_retailers ADD COLUMN discount_mode VARCHAR(20) NOT NULL DEFAULT 'commission'"
             )
+        statements.append(
+            "UPDATE special_retailers SET kilograms_per_unit = COALESCE((SELECT suppliers.kilograms_per_unit FROM inventory_allocations JOIN suppliers ON suppliers.id = inventory_allocations.supplier_id WHERE inventory_allocations.transaction_type = 'special' AND inventory_allocations.transaction_id = special_retailers.id ORDER BY inventory_allocations.id ASC LIMIT 1), kilograms_per_unit) WHERE COALESCE(kilograms_per_unit, 0) <= 0"
+        )
 
     if "retail_transactions" in inspector.get_table_names():
         retail_columns = {column["name"] for column in inspector.get_columns("retail_transactions")}
+        if "kilograms_per_unit" not in retail_columns:
+            statements.append(
+                "ALTER TABLE retail_transactions ADD COLUMN kilograms_per_unit FLOAT NOT NULL DEFAULT 0"
+            )
         if "discount_mode" not in retail_columns:
             statements.append(
                 "ALTER TABLE retail_transactions ADD COLUMN discount_mode VARCHAR(20) NOT NULL DEFAULT 'commission'"
             )
+        statements.append(
+            "UPDATE retail_transactions SET kilograms_per_unit = COALESCE((SELECT suppliers.kilograms_per_unit FROM inventory_allocations JOIN suppliers ON suppliers.id = inventory_allocations.supplier_id WHERE inventory_allocations.transaction_type = 'retail' AND inventory_allocations.transaction_id = retail_transactions.id ORDER BY inventory_allocations.id ASC LIMIT 1), kilograms_per_unit) WHERE COALESCE(kilograms_per_unit, 0) <= 0"
+        )
 
     if "suppliers" in inspector.get_table_names():
         supplier_columns = {column["name"] for column in inspector.get_columns("suppliers")}

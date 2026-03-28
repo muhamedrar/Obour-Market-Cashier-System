@@ -126,8 +126,8 @@ def report_pdf():
             [
                 f"مخزون - {row.fruit_name}",
                 str(row.class_number),
+                f"{float(row.kilograms_per_unit or 0):.2f}",
                 str(int(row.remaining_units or 0)),
-                f"{float(row.avg_price or 0):.2f}",
                 f"{float(row.total_value or 0):.2f}",
             ]
         )
@@ -136,8 +136,8 @@ def report_pdf():
             [
                 f"مباع - {row['fruit_name']}",
                 str(row["class_number"]),
+                f"{float(row['kilograms_per_unit'] or 0):.2f}",
                 str(int(row["units_count"])),
-                "-",
                 f"{float(row['revenue']):.2f}",
             ]
         )
@@ -166,7 +166,7 @@ def report_pdf():
             f"تاريخ التقرير: {datetime.now().strftime('%Y-%m-%d %H:%M')}",
             period_label,
         ],
-        ["البيان", "الدرجة", "الوحدات", "السعر", "الإجمالي"],
+        ["البيان", "الدرجة", "كجم/وحدة", "الوحدات", "الإجمالي"],
         rows,
     )
     return send_file(
@@ -200,11 +200,12 @@ def inventory_thermal_preview():
             f"تاريخ التقرير: {datetime.now().strftime('%Y-%m-%d %H:%M')}",
             period_label,
         ],
-        "table_headers": ["الصنف", "الدرجة", "الوحدات", "القيمة"],
+        "table_headers": ["الصنف", "الدرجة", "كجم/وحدة", "الوحدات", "القيمة"],
         "table_rows": [
             [
                 row.fruit_name,
                 row.class_number,
+                f"{float(row.kilograms_per_unit or 0):.2f}",
                 int(row.remaining_units or 0),
                 f"{float(row.total_value or 0):.2f}",
             ]
@@ -242,11 +243,12 @@ def inventory_thermal_pdf():
             f"تاريخ التقرير: {datetime.now().strftime('%Y-%m-%d %H:%M')}",
             period_label,
         ],
-        ["الصنف", "الدرجة", "الوحدات", "القيمة"],
+        ["الصنف", "الدرجة", "كجم/وحدة", "الوحدات", "القيمة"],
         [
             [
                 row.fruit_name,
                 str(row.class_number),
+                f"{float(row.kilograms_per_unit or 0):.2f}",
                 str(int(row.remaining_units or 0)),
                 f"{float(row.total_value or 0):.2f}",
             ]

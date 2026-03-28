@@ -114,6 +114,7 @@
                     <tr>
                         <th>الصنف</th>
                         <th>الدرجة</th>
+                        <th>كجم/وحدة</th>
                         <th>الوحدات</th>
                         <th>متوسط السعر</th>
                         <th>القيمة</th>
@@ -124,12 +125,13 @@
                         <tr>
                             <td>{{ row.fruit_name }}</td>
                             <td>{{ row.class_number }}</td>
+                            <td>{{ '%.2f'|format(row.kilograms_per_unit) }}</td>
                             <td>{{ row.remaining_units }}</td>
                             <td>{{ row.avg_price|currency }}</td>
                             <td>{{ row.total_value|currency }}</td>
                         </tr>
                     {% else %}
-                        <tr><td colspan="5" class="empty-state">لا يوجد مخزون حالياً.</td></tr>
+                        <tr><td colspan="6" class="empty-state">لا يوجد مخزون حالياً.</td></tr>
                     {% endfor %}
                 </tbody>
             </table>
@@ -149,6 +151,7 @@
                     <tr>
                         <th>الصنف</th>
                         <th>الدرجة</th>
+                        <th>كجم/وحدة</th>
                         <th>الوحدات المباعة</th>
                         <th>الإيراد</th>
                     </tr>
@@ -158,11 +161,12 @@
                         <tr>
                             <td>{{ row.fruit_name }}</td>
                             <td>{{ row.class_number }}</td>
+                            <td>{{ '%.2f'|format(row.kilograms_per_unit) }}</td>
                             <td>{{ row.units_count }}</td>
                             <td>{{ row.revenue|currency }}</td>
                         </tr>
                     {% else %}
-                        <tr><td colspan="4" class="empty-state">لا توجد مبيعات حتى الآن.</td></tr>
+                        <tr><td colspan="5" class="empty-state">لا توجد مبيعات حتى الآن.</td></tr>
                     {% endfor %}
                 </tbody>
             </table>

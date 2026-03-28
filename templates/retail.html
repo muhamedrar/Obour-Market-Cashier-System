@@ -41,6 +41,16 @@
                 </select>
             </label>
             <label>
+                <span>كجم/وحدة</span>
+                <select name="kilograms_per_unit" required data-sale-field="kilograms">
+                    {% if edit_transaction %}
+                        <option value="{{ edit_transaction.kilograms_per_unit }}" selected>{{ '%.2f'|format(edit_transaction.kilograms_per_unit) }}</option>
+                    {% else %}
+                        <option value="" selected>اختر الوزن</option>
+                    {% endif %}
+                </select>
+            </label>
+            <label>
                 <span>عدد الوحدات</span>
                 <input type="number" min="1" name="units_count" value="{{ edit_transaction.units_count if edit_transaction else '' }}" required>
             </label>
@@ -107,6 +117,7 @@
                         <th>التاريخ</th>
                         <th>الصنف</th>
                         <th>الدرجة</th>
+                        <th>كجم/وحدة</th>
                         <th>المتبقي</th>
                         <th>سعر المورد</th>
                         <th>اختيار</th>
@@ -119,6 +130,7 @@
                             <td>{{ good.date|date_ar }}</td>
                             <td>{{ good.fruit_name }}</td>
                             <td>{{ good.class_number }}</td>
+                            <td>{{ '%.2f'|format(good.kilograms_per_unit) }}</td>
                             <td>{{ good.remaining_units }}</td>
                             <td>{{ good.price_per_unit|currency }}</td>
                             <td>
@@ -128,6 +140,7 @@
                                     data-stock-pick
                                     data-fruit="{{ good.fruit_name }}"
                                     data-class="{{ good.class_number }}"
+                                    data-kilograms="{{ '%.2f'|format(good.kilograms_per_unit) }}"
                                     data-price="{{ '%.2f'|format(good.price_per_unit) }}"
                                 >
                                     استخدام
@@ -135,7 +148,7 @@
                             </td>
                         </tr>
                     {% else %}
-                        <tr><td colspan="7" class="empty-state">لا توجد بضاعة متاحة حالياً.</td></tr>
+                        <tr><td colspan="8" class="empty-state">لا توجد بضاعة متاحة حالياً.</td></tr>
                     {% endfor %}
                 </tbody>
             </table>
@@ -164,6 +177,7 @@
                         <th>التاريخ</th>
                         <th>الصنف</th>
                         <th>الدرجة</th>
+                        <th>كجم/وحدة</th>
                         <th>الوحدات</th>
                         <th>سعر الوحدة</th>
                         <th>الخصم</th>
@@ -178,6 +192,7 @@
                             <td>{{ item.date|date_ar }}</td>
                             <td>{{ item.fruit_name }}</td>
                             <td>{{ item.class_number }}</td>
+                            <td>{{ '%.2f'|format(item.kilograms_per_unit) }}</td>
                             <td>{{ item.units_count }}</td>
                             <td>{{ item.price_per_unit|currency }}</td>
                             <td>{{ item.discount_per_unit|currency }}</td>
@@ -194,7 +209,7 @@
                             </td>
                         </tr>
                     {% else %}
-                        <tr><td colspan="9" class="empty-state">لا توجد حركات بيع نقدي حتى الآن.</td></tr>
+                        <tr><td colspan="10" class="empty-state">لا توجد حركات بيع نقدي حتى الآن.</td></tr>
                     {% endfor %}
                 </tbody>
             </table>

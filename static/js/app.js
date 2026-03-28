@@ -12,6 +12,7 @@ forms.forEach((form) => {
     const priceDisplay = form.querySelector("[data-sale-price-display]");
     const fruitField = form.querySelector('[data-sale-field="fruit"]');
     const classField = form.querySelector('[data-sale-field="class"]');
+    const kilogramsField = form.querySelector('[data-sale-field="kilograms"]');
     const stockOptions = JSON.parse(form.dataset.stockOptions || "[]");
 
     const setSelectOptions = (field, values, placeholder, selectedValue = "") => {
@@ -68,16 +69,41 @@ forms.forEach((form) => {
         setSelectOptions(classField, classValues, "اختر الدرجة", nextClass);
     };
 
-    const updateOriginalPrice = () => {
-        if (!originalInput || !fruitField || !classField) {
+    const syncKilogramsOptions = () => {
+        if (!fruitField || !classField || !kilogramsField) {
             return;
         }
 
         const selectedFruit = fruitField.value;
         const selectedClass = classField.value;
+        const currentKilograms = kilogramsField.value;
+        const kilogramValues = stockOptions
+            .filter(
+                (item) => item.fruit_name === selectedFruit && item.class_number === selectedClass
+            )
+            .map((item) => Number(item.kilograms_per_unit || 0).toFixed(2));
+
+        const nextKilograms = kilogramValues.includes(currentKilograms)
+            ? currentKilograms
+            : (kilogramValues[0] || currentKilograms);
+
+        setSelectOptions(kilogramsField, kilogramValues, "اختر الوزن", nextKilograms);
+    };
+
+    const updateOriginalPrice = () => {
+        if (!originalInput || !fruitField || !classField || !kilogramsField) {
+            return;
+        }
+
+        const selectedFruit = fruitField.value;
+        const selectedClass = classField.value;
+        const selectedKilograms = Number(kilogramsField.value || 0).toFixed(2);
         const unitsNeeded = Number(unitsInput?.value || 0);
         const matchingLots = stockOptions.filter(
-            (item) => item.fruit_name === selectedFruit && item.class_number === selectedClass
+            (item) =>
+                item.fruit_name === selectedFruit &&
+                item.class_number === selectedClass &&
+                Number(item.kilograms_per_unit || 0).toFixed(2) === selectedKilograms
         );
 
         if (!matchingLots.length) {
@@ -111,6 +137,7 @@ forms.forEach((form) => {
     if (fruitField && classField) {
         const currentFruit = fruitField.value;
         const currentClass = classField.value;
+        const currentKilograms = kilogramsField?.value || "";
         setSelectOptions(
             fruitField,
             stockOptions.map((item) => item.fruit_name),
@@ -118,6 +145,7 @@ forms.forEach((form) => {
             currentFruit
         );
         syncClassOptions();
+        syncKilogramsOptions();
         if (currentClass && classField.value !== currentClass) {
             setSelectOptions(
                 classField,
@@ -126,6 +154,20 @@ forms.forEach((form) => {
                     .map((item) => item.class_number),
                 "اختر الدرجة",
                 currentClass
+            );
+        }
+        if (kilogramsField && currentKilograms && kilogramsField.value !== currentKilograms) {
+            setSelectOptions(
+                kilogramsField,
+                stockOptions
+                    .filter(
+                        (item) =>
+                            item.fruit_name === fruitField.value &&
+                            item.class_number === classField.value
+                    )
+                    .map((item) => Number(item.kilograms_per_unit || 0).toFixed(2)),
+                "اختر الوزن",
+                currentKilograms
             );
         }
     }
@@ -171,10 +213,16 @@ forms.forEach((form) => {
     });
     fruitField?.addEventListener("change", () => {
         syncClassOptions();
+        syncKilogramsOptions();
         updateOriginalPrice();
         renderPreview();
     });
     classField?.addEventListener("change", () => {
+        syncKilogramsOptions();
+        updateOriginalPrice();
+        renderPreview();
+    });
+    kilogramsField?.addEventListener("change", () => {
         updateOriginalPrice();
         renderPreview();
     });
@@ -195,6 +243,7 @@ document.querySelectorAll("[data-stock-pick]").forEach((button) => {
 
         const fruitInput = form.querySelector('[data-sale-field="fruit"]');
         const classInput = form.querySelector('[data-sale-field="class"]');
+        const kilogramsInput = form.querySelector('[data-sale-field="kilograms"]');
         const priceInput = form.querySelector('[data-sale-field="price"]');
 
         if (fruitInput) {
@@ -204,6 +253,10 @@ document.querySelectorAll("[data-stock-pick]").forEach((button) => {
         if (classInput) {
             classInput.value = button.dataset.class || "";
             classInput.dispatchEvent(new Event("change", { bubbles: true }));
+        }
+        if (kilogramsInput) {
+            kilogramsInput.value = button.dataset.kilograms || "";
+            kilogramsInput.dispatchEvent(new Event("change", { bubbles: true }));
         }
         if (priceInput) {
             priceInput.value = button.dataset.price || "";

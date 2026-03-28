@@ -67,15 +67,16 @@ def retail():
         units_count = parse_int(request.form.get("units_count"))
         fruit_name = request.form.get("fruit_name", "").strip()
         class_number = request.form.get("class_number", "").strip()
+        kilograms_per_unit = parse_float(request.form.get("kilograms_per_unit"))
 
-        if not fruit_name or not class_number or units_count <= 0:
-            flash("يرجى إدخال الصنف والدرجة وعدد الوحدات بشكل صحيح.", "error")
+        if not fruit_name or not class_number or kilograms_per_unit <= 0 or units_count <= 0:
+            flash("يرجى إدخال الصنف والدرجة وكجم/وحدة وعدد الوحدات بشكل صحيح.", "error")
             return redirect(url_for("retail.retail"))
 
         if transaction_id:
             restore_inventory_allocations(db_session, "retail", transaction_id)
 
-        quote = get_fifo_quote(db_session, fruit_name, class_number, units_count)
+        quote = get_fifo_quote(db_session, fruit_name, class_number, kilograms_per_unit, units_count)
         if not quote["success"]:
             db_session.rollback()
             flash(quote["message"], "error")
@@ -103,6 +104,7 @@ def retail():
         transaction.fruit_name = fruit_name
         transaction.units_count = units_count
         transaction.class_number = class_number
+        transaction.kilograms_per_unit = kilograms_per_unit
         transaction.original_price_per_unit = original_price
         transaction.discount_per_unit = discount_per_unit
         transaction.discount_mode = discount_mode
@@ -120,6 +122,7 @@ def retail():
             db_session,
             fruit_name,
             class_number,
+            kilograms_per_unit,
             units_count,
             "retail",
             transaction.id,
@@ -155,6 +158,7 @@ def retail():
         {
             "fruit_name": item.fruit_name,
             "class_number": item.class_number,
+            "kilograms_per_unit": float(item.kilograms_per_unit or 0),
             "remaining_units": int(item.remaining_units or 0),
             "price_per_unit": float(item.price_per_unit or 0),
         }
@@ -210,11 +214,12 @@ def retail_receipt(transaction_id: int):
             *[f"الهاتف: {phone}" for phone in split_phone_numbers(settings.phone_number)],
             f"التاريخ: {transaction.date.strftime('%Y-%m-%d %H:%M')}",
         ],
-        "table_headers": ["الصنف", "الدرجة", "الوحدات", "سعر الوحدة", "الإجمالي النهائي"],
+        "table_headers": ["الصنف", "الدرجة", "كجم/وحدة", "الوحدات", "سعر الوحدة", "الإجمالي النهائي"],
         "table_rows": [
             [
                 transaction.fruit_name,
                 transaction.class_number,
+                f"{transaction.kilograms_per_unit:.2f}",
                 transaction.units_count,
                 f"{transaction.price_per_unit:.2f}",
                 f"{transaction.final_price:.2f}",
@@ -263,10 +268,11 @@ def retail_receipt_pdf(transaction_id: int):
             *[f"الهاتف: {phone}" for phone in split_phone_numbers(settings.phone_number)],
             f"التاريخ: {transaction.date.strftime('%Y-%m-%d %H:%M')}",
         ],
-        ["الصنف", "الدرجة", "الوحدات", "سعر الوحدة", "الإجمالي"],
+        ["الصنف", "الدرجة", "كجم/وحدة", "الوحدات", "سعر الوحدة", "الإجمالي"],
         [[
             transaction.fruit_name,
             transaction.class_number,
+            f"{transaction.kilograms_per_unit:.2f}",
             str(transaction.units_count),
             f"{transaction.price_per_unit:.2f}",
             f"{transaction.final_price:.2f}",

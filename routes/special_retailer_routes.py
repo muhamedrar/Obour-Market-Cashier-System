@@ -55,6 +55,7 @@ def special_retailers():
         units_count = parse_int(request.form.get("units_count"))
         fruit_name = request.form.get("fruit_name", "").strip()
         class_number = request.form.get("class_number", "").strip()
+        kilograms_per_unit = parse_float(request.form.get("kilograms_per_unit"))
         retailer_name = request.form.get("retailer_name", "").strip()
         discount_mode = (
             normalize_discount_mode(request.form.get("discount_mode"))
@@ -62,14 +63,14 @@ def special_retailers():
             else "commission"
         )
 
-        if not retailer_name or not fruit_name or not class_number or units_count <= 0:
-            flash("يرجى إدخال اسم التاجر والصنف والدرجة وعدد الوحدات.", "error")
+        if not retailer_name or not fruit_name or not class_number or kilograms_per_unit <= 0 or units_count <= 0:
+            flash("يرجى إدخال اسم التاجر والصنف والدرجة وكجم/وحدة وعدد الوحدات.", "error")
             return redirect(url_for("special_retailers.special_retailers"))
 
         if retailer_id:
             restore_inventory_allocations(db_session, "special", retailer_id)
 
-        quote = get_fifo_quote(db_session, fruit_name, class_number, units_count)
+        quote = get_fifo_quote(db_session, fruit_name, class_number, kilograms_per_unit, units_count)
         if not quote["success"]:
             db_session.rollback()
             flash(quote["message"], "error")
@@ -104,6 +105,7 @@ def special_retailers():
         retailer.fruit_name = fruit_name
         retailer.units_count = units_count
         retailer.class_number = class_number
+        retailer.kilograms_per_unit = kilograms_per_unit
         retailer.original_price_per_unit = original_price
         retailer.discount_per_unit = discount_per_unit
         retailer.discount_mode = discount_mode
@@ -122,6 +124,7 @@ def special_retailers():
             db_session,
             fruit_name,
             class_number,
+            kilograms_per_unit,
             units_count,
             "special",
             retailer.id,
@@ -155,6 +158,7 @@ def special_retailers():
         {
             "fruit_name": item.fruit_name,
             "class_number": item.class_number,
+            "kilograms_per_unit": float(item.kilograms_per_unit or 0),
             "remaining_units": int(item.remaining_units or 0),
             "price_per_unit": float(item.price_per_unit or 0),
         }
@@ -210,10 +214,11 @@ def special_retailer_receipt(retailer_id: int):
             f"التاجر: {retailer.retailer_name}",
             f"التاريخ: {retailer.date.strftime('%Y-%m-%d %H:%M')}",
         ],
-        "table_headers": ["الصنف", "الدرجة", "الوحدات", "سعر الوحدة", "القيمة"],
+        "table_headers": ["الصنف", "الدرجة", "كجم/وحدة", "الوحدات", "سعر الوحدة", "القيمة"],
         "table_rows": [[
             retailer.fruit_name,
             retailer.class_number,
+            f"{retailer.kilograms_per_unit:.2f}",
             retailer.units_count,
             f"{retailer.price_per_unit:.2f}",
             f"{retailer.total_price:.2f}",
@@ -262,6 +267,7 @@ def special_retailer_receipt_pdf(retailer_id: int):
         [
             retailer.fruit_name,
             retailer.class_number,
+            f"{retailer.kilograms_per_unit:.2f}",
             str(retailer.units_count),
             f"{retailer.price_per_unit:.2f}",
             f"{retailer.total_price:.2f}",
@@ -271,11 +277,13 @@ def special_retailer_receipt_pdf(retailer_id: int):
             retailer.status,
             "-",
             "-",
+            "-",
             f"{retailer.total_paid:.2f}",
         ],
         [
             "المتبقي",
             retailer.status,
+            "-",
             "-",
             "-",
             f"{retailer.remaining_balance:.2f}",
@@ -289,7 +297,7 @@ def special_retailer_receipt_pdf(retailer_id: int):
             f"التاجر: {retailer.retailer_name}",
             f"التاريخ: {retailer.date.strftime('%Y-%m-%d %H:%M')}",
         ],
-        ["الصنف", "الحالة", "الوحدات", "سعر الوحدة", "القيمة"],
+        ["البيان", "التفصيل", "كجم/وحدة", "الوحدات", "سعر الوحدة", "القيمة"],
         rows,
         paper="thermal",
     )

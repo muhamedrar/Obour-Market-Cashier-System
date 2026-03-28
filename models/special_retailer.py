@@ -15,6 +15,7 @@ class SpecialRetailer(Base):
     fruit_name: Mapped[str] = mapped_column(String(120), nullable=False)
     units_count: Mapped[int] = mapped_column(Integer, nullable=False)
     class_number: Mapped[str] = mapped_column(String(50), nullable=False)
+    kilograms_per_unit: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
     original_price_per_unit: Mapped[float] = mapped_column(Float, nullable=False)
     discount_per_unit: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
     discount_mode: Mapped[str] = mapped_column(String(20), nullable=False, default="commission")

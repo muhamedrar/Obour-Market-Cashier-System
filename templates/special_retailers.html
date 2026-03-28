@@ -47,6 +47,16 @@
                 </select>
             </label>
             <label>
+                <span>كجم/وحدة</span>
+                <select name="kilograms_per_unit" required data-sale-field="kilograms">
+                    {% if edit_retailer %}
+                        <option value="{{ edit_retailer.kilograms_per_unit }}" selected>{{ '%.2f'|format(edit_retailer.kilograms_per_unit) }}</option>
+                    {% else %}
+                        <option value="" selected>اختر الوزن</option>
+                    {% endif %}
+                </select>
+            </label>
+            <label>
                 <span>عدد الوحدات</span>
                 <input type="number" min="1" name="units_count" value="{{ edit_retailer.units_count if edit_retailer else '' }}" required>
             </label>
@@ -110,6 +120,7 @@
                         <th>التاجر</th>
                         <th>الصنف</th>
                         <th>الدرجة</th>
+                        <th>كجم/وحدة</th>
                         <th>الوحدات</th>
                         <th>الإجمالي</th>
                         <th>المدفوع</th>
@@ -125,6 +136,7 @@
                             <td>{{ item.retailer_name }}</td>
                             <td>{{ item.fruit_name }}</td>
                             <td>{{ item.class_number }}</td>
+                            <td>{{ '%.2f'|format(item.kilograms_per_unit) }}</td>
                             <td>{{ item.units_count }}</td>
                             <td>{{ item.total_price|currency }}</td>
                             <td>{{ item.total_paid|currency }}</td>
@@ -146,7 +158,7 @@
                             </td>
                         </tr>
                     {% else %}
-                        <tr><td colspan="10" class="empty-state">لا توجد حركات آجل حتى الآن.</td></tr>
+                        <tr><td colspan="11" class="empty-state">لا توجد حركات آجل حتى الآن.</td></tr>
                     {% endfor %}
                 </tbody>
             </table>

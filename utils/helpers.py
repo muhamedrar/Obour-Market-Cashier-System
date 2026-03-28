@@ -275,6 +275,7 @@ def allocate_inventory_fifo(
     db_session,
     fruit_name: str,
     class_number: str,
+    kilograms_per_unit: float,
     units_needed: int,
     transaction_type: str,
     transaction_id: int,
@@ -284,6 +285,7 @@ def allocate_inventory_fifo(
         .filter(
             Supplier.fruit_name == fruit_name,
             Supplier.class_number == class_number,
+            Supplier.kilograms_per_unit == kilograms_per_unit,
             Supplier.remaining_units > 0,
         )
         .order_by(Supplier.date.asc(), Supplier.id.asc())
@@ -294,7 +296,7 @@ def allocate_inventory_fifo(
     if available_units < units_needed:
         return (
             False,
-            f"المخزون غير كافٍ. المتاح حالياً {available_units} وحدة فقط لهذا الصنف.",
+            f"المخزون غير كافٍ. المتاح حالياً {available_units} وحدة فقط لهذا الصنف بهذا الوزن.",
         )
 
     remaining = units_needed
@@ -340,13 +342,14 @@ def inventory_summary(
         db_session.query(
             Supplier.fruit_name,
             Supplier.class_number,
+            Supplier.kilograms_per_unit,
             func.sum(Supplier.remaining_units).label("remaining_units"),
             func.avg(Supplier.price_per_unit).label("avg_price"),
             func.sum(Supplier.remaining_units * Supplier.price_per_unit).label("total_value"),
         )
         .filter(Supplier.remaining_units > 0)
-        .group_by(Supplier.fruit_name, Supplier.class_number)
-        .order_by(Supplier.fruit_name.asc(), Supplier.class_number.asc())
+        .group_by(Supplier.fruit_name, Supplier.class_number, Supplier.kilograms_per_unit)
+        .order_by(Supplier.fruit_name.asc(), Supplier.class_number.asc(), Supplier.kilograms_per_unit.asc())
     )
     if fruit_name:
         query = query.filter(Supplier.fruit_name == fruit_name)
@@ -359,30 +362,41 @@ def sold_units_summary(db_session, date_from: str | None = None, date_to: str | 
         db_session.query(
             RetailTransaction.fruit_name.label("fruit_name"),
             RetailTransaction.class_number.label("class_number"),
+            RetailTransaction.kilograms_per_unit.label("kilograms_per_unit"),
             func.sum(RetailTransaction.units_count).label("units_count"),
             func.sum(RetailTransaction.final_price).label("revenue"),
         )
     )
     retail_rows = apply_date_range(retail_rows, RetailTransaction.date, date_from, date_to)
-    retail_rows = retail_rows.group_by(RetailTransaction.fruit_name, RetailTransaction.class_number).all()
+    retail_rows = retail_rows.group_by(
+        RetailTransaction.fruit_name,
+        RetailTransaction.class_number,
+        RetailTransaction.kilograms_per_unit,
+    ).all()
     debt_rows = (
         db_session.query(
             SpecialRetailer.fruit_name.label("fruit_name"),
             SpecialRetailer.class_number.label("class_number"),
+            SpecialRetailer.kilograms_per_unit.label("kilograms_per_unit"),
             func.sum(SpecialRetailer.units_count).label("units_count"),
             func.sum(SpecialRetailer.total_price).label("revenue"),
         )
     )
     debt_rows = apply_date_range(debt_rows, SpecialRetailer.date, date_from, date_to)
-    debt_rows = debt_rows.group_by(SpecialRetailer.fruit_name, SpecialRetailer.class_number).all()
+    debt_rows = debt_rows.group_by(
+        SpecialRetailer.fruit_name,
+        SpecialRetailer.class_number,
+        SpecialRetailer.kilograms_per_unit,
+    ).all()
 
     merged = {}
     for row in [*retail_rows, *debt_rows]:
-        key = (row.fruit_name, row.class_number)
+        key = (row.fruit_name, row.class_number, float(row.kilograms_per_unit or 0))
         if key not in merged:
             merged[key] = {
                 "fruit_name": row.fruit_name,
                 "class_number": row.class_number,
+                "kilograms_per_unit": float(row.kilograms_per_unit or 0),
                 "units_count": 0,
                 "revenue": 0.0,
             }
@@ -617,12 +631,13 @@ def build_base_context(db_session):
     }
 
 
-def get_fifo_quote(db_session, fruit_name: str, class_number: str, units_needed: int):
+def get_fifo_quote(db_session, fruit_name: str, class_number: str, kilograms_per_unit: float, units_needed: int):
     suppliers = (
         db_session.query(Supplier)
         .filter(
             Supplier.fruit_name == fruit_name,
             Supplier.class_number == class_number,
+            Supplier.kilograms_per_unit == kilograms_per_unit,
             Supplier.remaining_units > 0,
         )
         .order_by(Supplier.date.asc(), Supplier.id.asc())
@@ -633,7 +648,7 @@ def get_fifo_quote(db_session, fruit_name: str, class_number: str, units_needed:
     if not suppliers:
         return {
             "success": False,
-            "message": "لا يوجد مخزون متاح لهذا الصنف حالياً.",
+            "message": "لا يوجد مخزون متاح لهذا الصنف بهذا الوزن حالياً.",
             "available_units": 0,
             "starting_price": 0.0,
             "average_price_per_unit": 0.0,
