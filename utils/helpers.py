@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import date, datetime, time
+from datetime import date, datetime, time, timedelta
 from functools import wraps
 
 from flask import flash, redirect, request, session, url_for
@@ -106,6 +106,35 @@ def supplier_payout_unit_price(price_per_unit: float, supplier_profit_percentage
     return round(float(price_per_unit or 0) * (1 - (percentage / 100)), 2)
 
 
+def normalize_shift_cutoff_time(value: str | None, default: str = "00:00") -> str:
+    normalized = (value or "").strip()
+    try:
+        parsed = datetime.strptime(normalized, "%H:%M")
+        return parsed.strftime("%H:%M")
+    except ValueError:
+        return default
+
+
+def current_shift_cutoff_range(cutoff_time: str | None, reference: datetime | None = None) -> dict[str, str]:
+    now = reference or datetime.now()
+    normalized_cutoff = normalize_shift_cutoff_time(cutoff_time)
+    cutoff_clock = datetime.strptime(normalized_cutoff, "%H:%M").time()
+    today_cutoff = datetime.combine(now.date(), cutoff_clock)
+
+    if now >= today_cutoff:
+        start = today_cutoff
+        end = today_cutoff + timedelta(days=1) - timedelta(minutes=1)
+    else:
+        start = today_cutoff - timedelta(days=1)
+        end = today_cutoff - timedelta(minutes=1)
+
+    return {
+        "cutoff": normalized_cutoff,
+        "start": start.strftime("%Y-%m-%dT%H:%M"),
+        "end": end.strftime("%Y-%m-%dT%H:%M"),
+    }
+
+
 def effective_commission_per_unit(commission_per_unit: float, discount_per_unit: float) -> float:
     return max(round(commission_per_unit - discount_per_unit, 2), 0.0)
 
@@ -186,6 +215,7 @@ def get_or_create_settings(db_session) -> Settings:
         commission_per_unit=Config.DEFAULT_COMMISSION,
         admin_expense=Config.DEFAULT_ADMIN_EXPENSE,
         supplier_profit_percentage=Config.DEFAULT_SUPPLIER_PROFIT_PERCENTAGE,
+        shift_cutoff_time=Config.DEFAULT_SHIFT_CUTOFF_TIME,
         admin_password=generate_password_hash(Config.DEFAULT_ADMIN_PASSWORD),
     )
     db_session.add(settings)
@@ -549,12 +579,14 @@ def navigation_badges(db_session):
 
 def build_base_context(db_session):
     settings = get_or_create_settings(db_session)
+    shift_cutoff_range = current_shift_cutoff_range(settings.shift_cutoff_time)
     return {
         "settings": settings,
         "phone_numbers": split_phone_numbers(settings.phone_number),
         "nav_badges": navigation_badges(db_session),
         "is_admin": is_admin_logged_in(),
         "now_string": datetime.now().strftime("%Y-%m-%dT%H:%M"),
+        "shift_cutoff_range": shift_cutoff_range,
     }
 
 

@@ -58,6 +58,10 @@ def ensure_sqlite_columns():
             statements.append(
                 "ALTER TABLE settings ADD COLUMN supplier_profit_percentage FLOAT NOT NULL DEFAULT 0"
             )
+        if "shift_cutoff_time" not in settings_columns:
+            statements.append(
+                "ALTER TABLE settings ADD COLUMN shift_cutoff_time VARCHAR(5) NOT NULL DEFAULT '00:00'"
+            )
 
     if not statements:
         return

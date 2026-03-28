@@ -28,6 +28,7 @@ from utils.helpers import (
     hash_password,
     inventory_summary,
     is_admin_logged_in,
+    normalize_shift_cutoff_time,
     parse_float,
     revenue_breakdown,
     sold_units_summary,
@@ -304,6 +305,10 @@ def admin_panel():
         settings.supplier_profit_percentage = parse_float(
             request.form.get("supplier_profit_percentage"),
             settings.supplier_profit_percentage,
+        )
+        settings.shift_cutoff_time = normalize_shift_cutoff_time(
+            request.form.get("shift_cutoff_time"),
+            settings.shift_cutoff_time,
         )
 
         new_password = request.form.get("new_password", "").strip()

@@ -30,6 +30,10 @@
                 <span>نسبة ربح المحل من المورد (%)</span>
                 <input type="number" min="0" max="100" step="0.01" name="supplier_profit_percentage" value="{{ settings.supplier_profit_percentage }}" required>
             </label>
+            <label>
+                <span>وقت بداية الوردية</span>
+                <input type="time" name="shift_cutoff_time" value="{{ settings.shift_cutoff_time }}" required>
+            </label>
             <label class="full-width">
                 <span>كلمة مرور جديدة</span>
                 <input type="password" name="new_password" placeholder="اتركها فارغة إذا لم ترغب بالتغيير">

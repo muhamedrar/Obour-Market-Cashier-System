@@ -13,4 +13,5 @@ class Settings(Base):
     commission_per_unit: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
     admin_expense: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
     supplier_profit_percentage: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
+    shift_cutoff_time: Mapped[str] = mapped_column(String(5), nullable=False, default="00:00")
     admin_password: Mapped[str] = mapped_column(String(255), nullable=False)

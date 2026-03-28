@@ -253,3 +253,32 @@ document.querySelectorAll("[data-supplier-form]").forEach((form) => {
     pricePerKilogramInput?.addEventListener("input", syncUnitPrice);
     syncUnitPrice();
 });
+
+const shiftCutoffRoot = document.body;
+const shiftStart = shiftCutoffRoot?.dataset.shiftStart;
+const shiftEnd = shiftCutoffRoot?.dataset.shiftEnd;
+const shiftCutoff = shiftCutoffRoot?.dataset.shiftCutoff;
+
+if (shiftStart && shiftEnd && shiftCutoff) {
+    document.querySelectorAll('form[method="get"]').forEach((form) => {
+        const dateFromInput = form.querySelector('input[name="date_from"]');
+        const dateToInput = form.querySelector('input[name="date_to"]');
+
+        if (!dateFromInput || !dateToInput || form.querySelector("[data-shift-cutoff-trigger]")) {
+            return;
+        }
+
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "btn btn-ghost";
+        button.dataset.shiftCutoffTrigger = "true";
+        button.textContent = `وردية ${shiftCutoff}`;
+        button.title = `تطبيق فترة الوردية الحالية من ${shiftStart} إلى ${shiftEnd}`;
+        button.addEventListener("click", () => {
+            dateFromInput.value = shiftStart;
+            dateToInput.value = shiftEnd;
+            form.requestSubmit();
+        });
+        form.appendChild(button);
+    });
+}

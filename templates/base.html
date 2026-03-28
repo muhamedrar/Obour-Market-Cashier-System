@@ -8,7 +8,11 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <script defer src="{{ url_for('static', filename='js/app.js') }}"></script>
 </head>
-<body>
+<body
+    data-shift-cutoff="{{ shift_cutoff_range.cutoff }}"
+    data-shift-start="{{ shift_cutoff_range.start }}"
+    data-shift-end="{{ shift_cutoff_range.end }}"
+>
     <div class="page-shell">
         <aside class="sidebar">
             <div class="brand-card">
@@ -48,6 +52,10 @@
                 <div>
                     <strong>نسبة المورد</strong>
                     <span>{{ settings.supplier_profit_percentage }}%</span>
+                </div>
+                <div>
+                    <strong>بداية الوردية</strong>
+                    <span>{{ settings.shift_cutoff_time }}</span>
                 </div>
             </div>
         </aside>
