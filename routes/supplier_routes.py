@@ -42,13 +42,8 @@ def suppliers():
         supplier.class_number = request.form.get("class_number", "").strip()
         supplier.units_count = parse_int(request.form.get("units_count"))
         supplier.kilograms_per_unit = parse_float(request.form.get("kilograms_per_unit"))
-        price_per_unit = parse_float(request.form.get("price_per_unit"))
         price_per_kilogram = parse_float(request.form.get("price_per_kilogram"))
-        supplier.price_per_unit = (
-            round(price_per_kilogram * supplier.kilograms_per_unit, 2)
-            if price_per_kilogram > 0 and supplier.kilograms_per_unit > 0
-            else price_per_unit
-        )
+        supplier.price_per_unit = round(price_per_kilogram * supplier.kilograms_per_unit, 2)
         supplier.supplier_profit_percentage = (
             parse_float(
                 request.form.get("supplier_profit_percentage"),
@@ -70,7 +65,7 @@ def suppliers():
         if (
             supplier.units_count <= 0
             or supplier.price_per_unit < 0
-            or supplier.kilograms_per_unit < 0
+            or supplier.kilograms_per_unit <= 0
             or price_per_kilogram < 0
         ):
             flash("عدد الوحدات والسعر والوزن لكل وحدة يجب أن تكون قيمهم صالحة.", "error")

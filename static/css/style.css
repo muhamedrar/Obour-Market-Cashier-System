@@ -332,6 +332,27 @@ textarea {
     padding: 10px 12px;
 }
 
+.supplier-form-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 240px) minmax(0, 1fr);
+    gap: 18px;
+    align-items: start;
+}
+
+.supplier-side-stack {
+    display: grid;
+    gap: 12px;
+    align-content: start;
+}
+
+.supplier-side-stack label {
+    width: 100%;
+}
+
+.supplier-notes-field textarea {
+    min-height: 232px;
+}
+
 .full-width {
     grid-column: 1 / -1;
 }
@@ -361,6 +382,12 @@ textarea {
     background: rgba(255, 255, 255, 0.92);
     color: var(--text);
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75);
+}
+
+input[readonly] {
+    background: rgba(227, 239, 230, 0.96);
+    color: var(--primary-dark);
+    cursor: not-allowed;
 }
 
 input:focus,
@@ -638,6 +665,10 @@ th {
     .content-grid,
     .form-grid,
     .kpi-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .supplier-form-layout {
         grid-template-columns: 1fr;
     }
 

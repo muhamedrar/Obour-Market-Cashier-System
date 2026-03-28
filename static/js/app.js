@@ -243,7 +243,10 @@ document.querySelectorAll("[data-supplier-form]").forEach((form) => {
 
         if (kilogramsPerUnit > 0 && pricePerKilogram > 0) {
             pricePerUnitInput.value = (kilogramsPerUnit * pricePerKilogram).toFixed(2);
+            return;
         }
+
+        pricePerUnitInput.value = "";
     };
 
     kilogramsPerUnitInput?.addEventListener("input", syncUnitPrice);
