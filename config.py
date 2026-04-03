@@ -1,15 +1,10 @@
-from pathlib import Path
-
-
-BASE_DIR = Path(__file__).resolve().parent
-DATA_DIR = BASE_DIR / "data"
-DATABASE_FILE = DATA_DIR / "cashier.db"
+from sql_server_config import build_database_uri, build_engine_options
 
 
 class Config:
     SECRET_KEY = "cashier-local-secret-key"
-    DATA_DIR = str(DATA_DIR)
-    DATABASE_URI = f"sqlite:///{DATABASE_FILE}"
+    DATABASE_URI = build_database_uri()
+    DATABASE_ENGINE_OPTIONS = build_engine_options()
     DEFAULT_COMPANY_NAME = "مؤسسة الكاشير"
     DEFAULT_PHONE_NUMBER = "01000000000"
     DEFAULT_COMMISSION = 0.0

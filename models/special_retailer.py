@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import DateTime, Float, Integer, String, Text
+from sqlalchemy import DateTime, Float, Integer, String, Unicode, UnicodeText
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from models import Base
@@ -11,10 +11,10 @@ class SpecialRetailer(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     date: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.now)
-    retailer_name: Mapped[str] = mapped_column(String(120), nullable=False)
-    fruit_name: Mapped[str] = mapped_column(String(120), nullable=False)
+    retailer_name: Mapped[str] = mapped_column(Unicode(120), nullable=False)
+    fruit_name: Mapped[str] = mapped_column(Unicode(120), nullable=False)
     units_count: Mapped[int] = mapped_column(Integer, nullable=False)
-    class_number: Mapped[str] = mapped_column(String(50), nullable=False)
+    class_number: Mapped[str] = mapped_column(Unicode(50), nullable=False)
     kilograms_per_unit: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
     original_price_per_unit: Mapped[float] = mapped_column(Float, nullable=False)
     discount_per_unit: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
@@ -26,7 +26,7 @@ class SpecialRetailer(Base):
     total_paid: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
     remaining_balance: Mapped[float] = mapped_column(Float, nullable=False)
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="unpaid")
-    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    notes: Mapped[str | None] = mapped_column(UnicodeText, nullable=True)
 
     payments = relationship(
         "Payment", back_populates="retailer", cascade="all, delete-orphan", order_by="Payment.payment_date.desc()"

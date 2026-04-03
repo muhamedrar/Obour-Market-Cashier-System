@@ -1,8 +1,8 @@
-💻 Cashier & Inventory System – Full Requirements (MVC, Python + SQLite)
+💻 Cashier & Inventory System – Full Requirements (MVC, Python + MSSQL)
 🧱 TECHNOLOGY STACK
 Backend: Python (Flask, MVC structure)
 Frontend: HTML/CSS/JS (Bootstrap optional)
-Database: SQLite (runs locally on any PC)
+Database: Microsoft SQL Server through SQLAlchemy
 ORM: SQLAlchemy
 Templating: Jinja2
 PDF generation: reportlab or equivalent
@@ -10,7 +10,7 @@ PDF generation: reportlab or equivalent
 project/
 │
 ├─ app.py                   # Main entry point
-├─ config.py                # Configs (DB path, admin password, etc.)
+├─ config.py                # Configs (DB connection, admin password, etc.)
 │
 ├─ models/                  # Database models
 │   ├─ supplier.py
@@ -170,6 +170,8 @@ All edits must recalc totals instantly
 Payment cannot exceed remaining_balance
 💡 TECHNICAL NOTES
 Use Flask MVC structure for maintainability
+Keep SQL Server settings in a dedicated config file for easier setup and maintenance
+Keep route registration and navigation centralized so new tabs/features are added in one place
 Use SQLAlchemy ORM for DB access
 Use Jinja2 for templates
 Optional: AJAX for smoother UI

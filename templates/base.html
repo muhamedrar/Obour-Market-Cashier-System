@@ -30,14 +30,14 @@
             </div>
 
             <nav class="nav-links">
-                <a class="{{ 'active' if request.endpoint == 'admin.dashboard' else '' }}" href="{{ url_for('admin.dashboard') }}">لوحة التحكم</a>
-                <a class="{{ 'active' if request.endpoint == 'suppliers.suppliers' else '' }}" href="{{ url_for('suppliers.suppliers') }}">الموردون <span>{{ nav_badges.open_suppliers }}</span></a>
-                <a class="{{ 'active' if request.endpoint == 'retail.retail' else '' }}" href="{{ url_for('retail.retail') }}">البيع النقدي</a>
-                <a class="{{ 'active' if request.endpoint == 'special_retailers.special_retailers' else '' }}" href="{{ url_for('special_retailers.special_retailers') }}">تجار الآجل <span>{{ nav_badges.unpaid_retailers }}</span></a>
-                <a class="{{ 'active' if request.endpoint == 'payments.payments' else '' }}" href="{{ url_for('payments.payments') }}">الدفعات</a>
-                <a class="{{ 'active' if request.endpoint == 'expenses.expenses' else '' }}" href="{{ url_for('expenses.expenses') }}">المصروفات</a>
-                <a class="{{ 'active' if request.endpoint == 'admin.reports' else '' }}" href="{{ url_for('admin.reports') }}">التقارير</a>
-                <a class="{{ 'active' if request.endpoint in ['admin.admin_panel', 'admin.login'] else '' }}" href="{{ url_for('admin.admin_panel' if is_admin else 'admin.login') }}">&#9881; المسؤول</a>
+                {% for item in navigation_items %}
+                    <a class="{{ 'active' if item.active else '' }}" href="{{ item.href }}">
+                        {{ item.label }}
+                        {% if item.badge is not none %}
+                            <span>{{ item.badge }}</span>
+                        {% endif %}
+                    </a>
+                {% endfor %}
             </nav>
 
             <div class="settings-card sidebar-spacer">

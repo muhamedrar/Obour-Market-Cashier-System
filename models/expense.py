@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, Float, Integer, String
+from sqlalchemy import Boolean, DateTime, Float, Integer, Unicode
 from sqlalchemy.orm import Mapped, mapped_column
 
 from models import Base
@@ -11,7 +11,7 @@ class Expense(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     date: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.now)
-    expense_name: Mapped[str] = mapped_column(String(120), nullable=False)
+    expense_name: Mapped[str] = mapped_column(Unicode(120), nullable=False)
     amount: Mapped[float] = mapped_column(Float, nullable=False)
     paid_amount: Mapped[float] = mapped_column(Float, nullable=False, default=0)
     is_paid: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)

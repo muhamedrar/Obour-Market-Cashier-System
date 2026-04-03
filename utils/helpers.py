@@ -8,6 +8,7 @@ from sqlalchemy import and_, case, func, select
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from config import Config
+from navigation import build_navigation_items
 from models.expense import Expense
 from models.inventory_allocation import InventoryAllocation
 from models.payment import Payment
@@ -694,11 +695,14 @@ def navigation_badges(db_session):
 def build_base_context(db_session):
     settings = get_or_create_settings(db_session)
     shift_cutoff_range = current_shift_cutoff_range(settings.shift_cutoff_time)
+    nav_badges = navigation_badges(db_session)
+    is_admin = is_admin_logged_in()
     return {
         "settings": settings,
         "phone_numbers": split_phone_numbers(settings.phone_number),
-        "nav_badges": navigation_badges(db_session),
-        "is_admin": is_admin_logged_in(),
+        "nav_badges": nav_badges,
+        "navigation_items": build_navigation_items(nav_badges, is_admin),
+        "is_admin": is_admin,
         "now_string": datetime.now().strftime("%Y-%m-%dT%H:%M"),
         "shift_cutoff_range": shift_cutoff_range,
     }
