@@ -28,18 +28,22 @@
                     عند تعديل دفعة موجودة يتم الإبقاء على نفس التاجر. إذا أردت نقل الدفعة لتاجر آخر احذفها ثم أعد إدخالها.
                 </div>
             {% endif %}
-            <label>
-                <span>تاريخ الدفعة</span>
-                <input type="datetime-local" name="payment_date" value="{{ edit_payment.payment_date|datetime_input if edit_payment else now_string }}" required>
-            </label>
-            <label>
-                <span>قيمة الدفعة</span>
-                <input type="number" min="0.01" step="0.01" name="amount_paid" value="{{ edit_payment.amount_paid if edit_payment else '' }}" required>
-            </label>
-            <label class="full-width">
-                <span>ملاحظات</span>
-                <textarea name="notes" rows="3">{{ edit_payment.notes if edit_payment else '' }}</textarea>
-            </label>
+            <div class="form-section-grid full-width">
+                <div class="field-cluster">
+                    <label class="compact-field">
+                        <span>تاريخ الدفعة</span>
+                        <input type="datetime-local" name="payment_date" value="{{ edit_payment.payment_date|datetime_input if edit_payment else now_string }}" required>
+                    </label>
+                    <label class="compact-field">
+                        <span>قيمة الدفعة</span>
+                        <input type="number" min="0.01" step="0.01" name="amount_paid" value="{{ edit_payment.amount_paid if edit_payment else '' }}" required>
+                    </label>
+                </div>
+                <label class="notes-field">
+                    <span>ملاحظات</span>
+                    <textarea name="notes" rows="3">{{ edit_payment.notes if edit_payment else '' }}</textarea>
+                </label>
+            </div>
             <div class="form-actions full-width">
                 <button class="btn btn-primary" type="submit">{{ "حفظ التعديل" if edit_payment else "حفظ الدفعة" }}</button>
                 {% if edit_payment %}
@@ -103,7 +107,6 @@
                         <th>التاريخ</th>
                         <th>التاجر</th>
                         <th>الدفعة</th>
-                        <th>ملاحظات</th>
                         <th>إجراءات</th>
                     </tr>
                 </thead>
@@ -113,8 +116,12 @@
                             <td>{{ payment.payment_date|date_ar }}</td>
                             <td>{{ payment.retailer.retailer_name }}</td>
                             <td>{{ payment.amount_paid|currency }}</td>
-                            <td>{{ payment.notes or "-" }}</td>
                             <td class="actions-cell">
+                                {% if payment.notes %}
+                                    <button class="btn btn-small btn-secondary" type="button" data-open-dialog="payment-notes-{{ payment.id }}">
+                                        الملاحظات
+                                    </button>
+                                {% endif %}
                                 {% if is_admin %}
                                     <a class="btn btn-small btn-ghost" href="{{ url_for('payments.payments', edit=payment.id) }}">تعديل</a>
                                     <form method="post" action="{{ url_for('payments.delete_payment', payment_id=payment.id) }}">
@@ -123,10 +130,26 @@
                                 {% else %}
                                     <span class="muted">للمسؤول فقط</span>
                                 {% endif %}
+                                {% if payment.notes %}
+                                    <dialog class="action-dialog" id="payment-notes-{{ payment.id }}" data-action-dialog>
+                                        <div class="action-dialog-card">
+                                            <div class="action-dialog-head">
+                                                <div>
+                                                    <strong>ملاحظات الدفعة</strong>
+                                                    <span>{{ payment.retailer.retailer_name }} | {{ payment.payment_date|date_ar }}</span>
+                                                </div>
+                                                <button class="btn btn-small btn-ghost" type="button" data-close-dialog>إغلاق</button>
+                                            </div>
+                                            <div class="action-dialog-body">
+                                                <div class="note-dialog-text">{{ payment.notes }}</div>
+                                            </div>
+                                        </div>
+                                    </dialog>
+                                {% endif %}
                             </td>
                         </tr>
                     {% else %}
-                        <tr><td colspan="5" class="empty-state">لا توجد دفعات مسجلة.</td></tr>
+                        <tr><td colspan="4" class="empty-state">لا توجد دفعات مسجلة.</td></tr>
                     {% endfor %}
                 </tbody>
             </table>

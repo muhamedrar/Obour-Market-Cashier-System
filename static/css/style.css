@@ -324,33 +324,56 @@ textarea {
 }
 
 .form-grid label.compact-field {
-    width: min(100%, 220px);
-    justify-self: start;
+    width: 100%;
+    justify-self: stretch;
 }
 
 .supplier-form-grid input[type="number"] {
     padding: 10px 12px;
 }
 
+.form-section-grid,
 .supplier-form-layout {
     display: grid;
-    grid-template-columns: minmax(0, 240px) minmax(0, 1fr);
-    gap: 18px;
-    align-items: start;
+    grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.95fr);
+    gap: 20px;
+    align-items: stretch;
 }
 
+.field-cluster,
 .supplier-side-stack {
     display: grid;
-    gap: 12px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
     align-content: start;
+    padding: 18px;
+    border-radius: 22px;
+    background: rgba(246, 251, 247, 0.92);
+    border: 1px solid rgba(28, 122, 79, 0.14);
 }
 
+.field-cluster label,
 .supplier-side-stack label {
     width: 100%;
 }
 
+.field-cluster .field-span-full,
+.supplier-side-stack .compact-field-wide {
+    grid-column: 1 / -1;
+}
+
+.notes-field {
+    display: grid;
+    gap: 10px;
+    align-content: start;
+    padding: 18px;
+    border-radius: 22px;
+    background: rgba(246, 251, 247, 0.92);
+    border: 1px solid rgba(28, 122, 79, 0.14);
+}
+
 .supplier-notes-field textarea {
-    min-height: 232px;
+    min-height: 214px;
 }
 
 .full-width {
@@ -382,6 +405,12 @@ textarea {
     background: rgba(255, 255, 255, 0.92);
     color: var(--text);
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75);
+}
+
+textarea {
+    resize: vertical;
+    min-height: 132px;
+    line-height: 1.6;
 }
 
 input[readonly] {
@@ -535,8 +564,117 @@ th {
 }
 
 .supplier-table .actions-cell {
-    flex-direction: column;
-    align-items: stretch;
+    display: table-cell;
+    width: 88px;
+    text-align: center;
+    vertical-align: middle;
+    white-space: nowrap;
+}
+
+.action-dialog {
+    width: min(420px, calc(100vw - 32px));
+    padding: 0;
+    border: 0;
+    border-radius: 24px;
+    background: transparent;
+    box-shadow: none;
+}
+
+.action-dialog::backdrop {
+    background: rgba(6, 31, 35, 0.42);
+    backdrop-filter: blur(4px);
+}
+
+.action-dialog-card {
+    display: grid;
+    gap: 14px;
+    padding: 18px;
+    border-radius: 24px;
+    background: #fff;
+    border: 1px solid rgba(12, 91, 105, 0.12);
+    box-shadow: 0 22px 44px rgba(12, 91, 105, 0.18);
+}
+
+.action-dialog-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    text-align: right;
+}
+
+.action-dialog-head strong {
+    display: block;
+    color: var(--primary-dark);
+    margin-bottom: 4px;
+}
+
+.action-dialog-head span {
+    color: var(--muted);
+    font-size: 0.86rem;
+}
+
+.action-dialog-body {
+    display: grid;
+    gap: 8px;
+}
+
+.note-dialog-text {
+    padding: 14px 16px;
+    border-radius: 18px;
+    background: rgba(244, 248, 245, 0.96);
+    border: 1px solid rgba(28, 122, 79, 0.12);
+    color: var(--text);
+    white-space: pre-wrap;
+    word-break: break-word;
+    line-height: 1.75;
+}
+
+.row-actions-link,
+.row-actions-form .btn,
+.row-actions-payment-form input {
+    width: 100%;
+}
+
+.row-actions-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 12px;
+    border-radius: 12px;
+    background: #cfe9d7;
+    color: var(--primary-dark);
+    text-decoration: none;
+    transition: 0.18s ease;
+}
+
+.row-actions-link:hover {
+    transform: translateY(-1px);
+}
+
+.row-actions-link-ghost {
+    background: #e4f2e8;
+    color: var(--primary);
+}
+
+.row-actions-form {
+    display: grid;
+    gap: 8px;
+    margin: 0;
+}
+
+.row-actions-amount {
+    display: grid;
+    gap: 6px;
+    color: var(--muted);
+    font-size: 0.78rem;
+    text-align: right;
+}
+
+.row-actions-payment-form input {
+    min-width: 0;
+    padding: 10px 12px;
+    border-radius: 12px;
 }
 
 .mini-list {
@@ -682,6 +820,7 @@ th {
         grid-template-columns: 1fr;
     }
 
+    .form-section-grid,
     .supplier-form-layout {
         grid-template-columns: 1fr;
     }
@@ -695,6 +834,18 @@ th {
     .panel-head {
         flex-direction: column;
         align-items: stretch;
+    }
+
+    .action-dialog {
+        width: min(100vw - 20px, 420px);
+    }
+
+    .action-dialog-card {
+        padding: 16px;
+    }
+
+    .action-dialog-head {
+        flex-direction: column;
     }
 }
 

@@ -53,7 +53,7 @@
                         <input type="number" min="0" step="0.01" name="price_per_unit" value="{{ edit_supplier.price_per_unit if edit_supplier else '' }}" readonly required>
                     </label>
                     {% if is_admin %}
-                        <label class="compact-field">
+                        <label class="compact-field compact-field-wide">
                             <span>نسبة ربح المحل من المورد (%)</span>
                             <input type="number" min="0" max="100" step="0.01" name="supplier_profit_percentage" value="{{ edit_supplier.supplier_profit_percentage if edit_supplier else settings.supplier_profit_percentage }}" required>
                         </label>
@@ -61,7 +61,7 @@
                         <input type="hidden" name="supplier_profit_percentage" value="{{ edit_supplier.supplier_profit_percentage if edit_supplier else settings.supplier_profit_percentage }}">
                     {% endif %}
                 </div>
-                <label class="supplier-notes-field">
+                <label class="supplier-notes-field notes-field">
                     <span>ملاحظات</span>
                     <textarea name="notes" rows="3">{{ edit_supplier.notes if edit_supplier else '' }}</textarea>
                 </label>
@@ -149,23 +149,63 @@
                                 </span>
                             </td>
                             <td class="actions-cell">
-                                <a class="btn btn-small btn-secondary" href="{{ url_for('suppliers.supplier_receipt', supplier_id=supplier.id) }}">معاينة</a>
-                                {% if is_admin %}
-                                    {% if supplier.payment_status != "paid" %}
-                                        <form class="expense-pay-form" method="post" action="{{ url_for('suppliers.pay_supplier', supplier_id=supplier.id) }}">
-                                            <input type="hidden" name="next" value="{{ request.full_path if request.query_string else request.path }}">
-                                            <input type="number" min="0.01" max="{{ supplier.remaining_payout_balance }}" step="0.01" name="amount_paid" placeholder="دفعة" required>
-                                            <button class="btn btn-small btn-secondary" type="submit">سداد جزئي</button>
-                                        </form>
-                                        <form method="post" action="{{ url_for('suppliers.confirm_supplier_payment', supplier_id=supplier.id) }}">
-                                            <input type="hidden" name="next" value="{{ request.full_path if request.query_string else request.path }}">
-                                            <button class="btn btn-small btn-secondary" type="submit" data-confirm="تأكيد سداد باقي مستحق المورد؟">سداد كامل</button>
-                                        </form>
-                                    {% endif %}
-                                    <a class="btn btn-small btn-ghost" href="{{ url_for('suppliers.suppliers', edit=supplier.id) }}">تعديل</a>
-                                    <form method="post" action="{{ url_for('suppliers.delete_supplier', supplier_id=supplier.id) }}">
-                                        <button class="btn btn-small btn-danger" type="submit" data-confirm="هل تريد حذف المورد؟">حذف</button>
-                                    </form>
+                                <button class="btn btn-small btn-secondary" type="button" data-open-dialog="supplier-actions-{{ supplier.id }}">
+                                    الإجراءات
+                                </button>
+                                <dialog class="action-dialog" id="supplier-actions-{{ supplier.id }}" data-action-dialog>
+                                    <div class="action-dialog-card">
+                                        <div class="action-dialog-head">
+                                            <div>
+                                                <strong>إجراءات المورد</strong>
+                                                <span>{{ supplier.supplier_name }} | {{ supplier.fruit_name }}</span>
+                                            </div>
+                                            <button class="btn btn-small btn-ghost" type="button" data-close-dialog>إغلاق</button>
+                                        </div>
+                                        <div class="action-dialog-body">
+                                            <a class="row-actions-link" href="{{ url_for('suppliers.supplier_receipt', supplier_id=supplier.id) }}">معاينة</a>
+                                            {% if supplier.notes %}
+                                                <button class="btn btn-small btn-ghost" type="button" data-open-dialog="supplier-notes-{{ supplier.id }}">
+                                                    عرض الملاحظات
+                                                </button>
+                                            {% endif %}
+                                            {% if is_admin %}
+                                                {% if supplier.payment_status != "paid" %}
+                                                    <form class="row-actions-form row-actions-payment-form" method="post" action="{{ url_for('suppliers.pay_supplier', supplier_id=supplier.id) }}">
+                                                        <input type="hidden" name="next" value="{{ request.full_path if request.query_string else request.path }}">
+                                                        <label class="row-actions-amount">
+                                                            <span>دفعة جزئية</span>
+                                                            <input type="number" min="0.01" max="{{ supplier.remaining_payout_balance }}" step="0.01" name="amount_paid" placeholder="قيمة الدفعة" required>
+                                                        </label>
+                                                        <button class="btn btn-small btn-secondary" type="submit">سداد جزئي</button>
+                                                    </form>
+                                                    <form class="row-actions-form" method="post" action="{{ url_for('suppliers.confirm_supplier_payment', supplier_id=supplier.id) }}">
+                                                        <input type="hidden" name="next" value="{{ request.full_path if request.query_string else request.path }}">
+                                                        <button class="btn btn-small btn-secondary" type="submit" data-confirm="تأكيد سداد باقي مستحق المورد؟">سداد كامل</button>
+                                                    </form>
+                                                {% endif %}
+                                                <a class="row-actions-link row-actions-link-ghost" href="{{ url_for('suppliers.suppliers', edit=supplier.id) }}">تعديل</a>
+                                                <form class="row-actions-form" method="post" action="{{ url_for('suppliers.delete_supplier', supplier_id=supplier.id) }}">
+                                                    <button class="btn btn-small btn-danger" type="submit" data-confirm="هل تريد حذف المورد؟">حذف</button>
+                                                </form>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </dialog>
+                                {% if supplier.notes %}
+                                    <dialog class="action-dialog" id="supplier-notes-{{ supplier.id }}" data-action-dialog>
+                                        <div class="action-dialog-card">
+                                            <div class="action-dialog-head">
+                                                <div>
+                                                    <strong>ملاحظات المورد</strong>
+                                                    <span>{{ supplier.supplier_name }} | {{ supplier.fruit_name }}</span>
+                                                </div>
+                                                <button class="btn btn-small btn-ghost" type="button" data-close-dialog>إغلاق</button>
+                                            </div>
+                                            <div class="action-dialog-body">
+                                                <div class="note-dialog-text">{{ supplier.notes }}</div>
+                                            </div>
+                                        </div>
+                                    </dialog>
                                 {% endif %}
                             </td>
                         </tr>

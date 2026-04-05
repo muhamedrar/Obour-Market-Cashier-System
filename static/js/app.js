@@ -307,6 +307,76 @@ document.querySelectorAll("[data-supplier-form]").forEach((form) => {
     syncUnitPrice();
 });
 
+const actionDialogs = document.querySelectorAll("[data-action-dialog]");
+
+const closeDialog = (dialog) => {
+    if (!dialog) {
+        return;
+    }
+
+    if (typeof dialog.close === "function" && dialog.open) {
+        dialog.close();
+        return;
+    }
+
+    dialog.removeAttribute("open");
+};
+
+const openDialog = (dialog) => {
+    if (!dialog) {
+        return;
+    }
+
+    actionDialogs.forEach((otherDialog) => {
+        if (otherDialog !== dialog) {
+            closeDialog(otherDialog);
+        }
+    });
+
+    if (dialog.open) {
+        return;
+    }
+
+    if (typeof dialog.showModal === "function") {
+        dialog.showModal();
+        return;
+    }
+
+    dialog.setAttribute("open", "open");
+};
+
+document.querySelectorAll("[data-open-dialog]").forEach((button) => {
+    button.addEventListener("click", () => {
+        const dialogId = button.getAttribute("data-open-dialog");
+        const dialog = dialogId ? document.getElementById(dialogId) : null;
+
+        openDialog(dialog);
+    });
+});
+
+document.querySelectorAll("[data-close-dialog]").forEach((button) => {
+    button.addEventListener("click", () => {
+        const dialog = button.closest("[data-action-dialog]");
+        closeDialog(dialog);
+    });
+});
+
+actionDialogs.forEach((dialog) => {
+    dialog.addEventListener("click", (event) => {
+        const bounds = dialog.getBoundingClientRect();
+        const clickedBackdrop = (
+            event.clientX < bounds.left ||
+            event.clientX > bounds.right ||
+            event.clientY < bounds.top ||
+            event.clientY > bounds.bottom
+        );
+
+        if (clickedBackdrop && dialog.open) {
+            closeDialog(dialog);
+        }
+    });
+});
+
 const shiftCutoffRoot = document.body;
 const shiftStart = shiftCutoffRoot?.dataset.shiftStart;
 const shiftEnd = shiftCutoffRoot?.dataset.shiftEnd;

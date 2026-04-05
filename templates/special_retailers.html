@@ -18,76 +18,80 @@
             <input type="hidden" name="original_price_per_unit" value="{{ edit_retailer.original_price_per_unit if edit_retailer else '' }}" data-sale-field="price">
             <input type="hidden" name="commission_per_unit" value="{{ edit_retailer.commission_per_unit if edit_retailer else default_commission }}">
             <input type="hidden" name="admin_expense" value="{{ edit_retailer.admin_expense if edit_retailer else default_admin_expense }}">
-            <label>
-                <span>التاريخ</span>
-                <input type="datetime-local" name="date" value="{{ edit_retailer.date|datetime_input if edit_retailer else now_string }}" required>
-            </label>
-            <label>
-                <span>اسم التاجر</span>
-                <input type="text" name="retailer_name" value="{{ edit_retailer.retailer_name if edit_retailer else '' }}" required>
-            </label>
-            <label>
-                <span>الصنف</span>
-                <select name="fruit_name" required data-sale-field="fruit">
-                    {% if edit_retailer %}
-                        <option value="{{ edit_retailer.fruit_name }}" selected>{{ edit_retailer.fruit_name }}</option>
+            <div class="form-section-grid full-width">
+                <div class="field-cluster">
+                    <label class="compact-field">
+                        <span>التاريخ</span>
+                        <input type="datetime-local" name="date" value="{{ edit_retailer.date|datetime_input if edit_retailer else now_string }}" required>
+                    </label>
+                    <label class="compact-field">
+                        <span>اسم التاجر</span>
+                        <input type="text" name="retailer_name" value="{{ edit_retailer.retailer_name if edit_retailer else '' }}" required>
+                    </label>
+                    <label class="compact-field">
+                        <span>الصنف</span>
+                        <select name="fruit_name" required data-sale-field="fruit">
+                            {% if edit_retailer %}
+                                <option value="{{ edit_retailer.fruit_name }}" selected>{{ edit_retailer.fruit_name }}</option>
+                            {% else %}
+                                <option value="" selected>اختر الصنف من المخزون</option>
+                            {% endif %}
+                        </select>
+                    </label>
+                    <label class="compact-field">
+                        <span>الدرجة</span>
+                        <select name="class_number" required data-sale-field="class">
+                            {% if edit_retailer %}
+                                <option value="{{ edit_retailer.class_number }}" selected>{{ edit_retailer.class_number }}</option>
+                            {% else %}
+                                <option value="" selected>اختر الدرجة</option>
+                            {% endif %}
+                        </select>
+                    </label>
+                    <label class="compact-field">
+                        <span>كجم/وحدة</span>
+                        <select name="kilograms_per_unit" required data-sale-field="kilograms">
+                            {% if edit_retailer %}
+                                <option value="{{ edit_retailer.kilograms_per_unit }}" selected>{{ '%.2f'|format(edit_retailer.kilograms_per_unit) }}</option>
+                            {% else %}
+                                <option value="" selected>اختر الوزن</option>
+                            {% endif %}
+                        </select>
+                    </label>
+                    <label class="compact-field">
+                        <span>عدد الوحدات</span>
+                        <input type="number" min="1" name="units_count" value="{{ edit_retailer.units_count if edit_retailer else '' }}" required>
+                    </label>
+                    <div class="info-box price-display-box field-span-full">
+                        <strong>سعر الوحدة من المورد</strong>
+                        <span data-sale-price-display>{{ edit_retailer.original_price_per_unit|currency if edit_retailer else "يتم جلبه تلقائياً من بيانات المورد عند الحفظ" }}</span>
+                    </div>
+                    {% if is_admin %}
+                        <label class="compact-field">
+                            <span>الخصم للوحدة</span>
+                            <input type="number" min="0" step="0.01" name="discount_per_unit" value="{{ edit_retailer.discount_per_unit if edit_retailer else 0 }}" required>
+                        </label>
+                        <label class="compact-field">
+                            <span>نوع تأثير الخصم</span>
+                            <select name="discount_mode">
+                                {% set current_discount_mode = edit_retailer.discount_mode if edit_retailer else 'commission' %}
+                                <option value="commission" {{ 'selected' if current_discount_mode == 'commission' else '' }}>يخصم من العمولة</option>
+                                <option value="unit_price" {{ 'selected' if current_discount_mode == 'unit_price' else '' }}>يخصم من سعر الوحدة</option>
+                            </select>
+                        </label>
                     {% else %}
-                        <option value="" selected>اختر الصنف من المخزون</option>
+                        <input type="hidden" name="discount_per_unit" value="0">
+                        <input type="hidden" name="discount_mode" value="{{ edit_retailer.discount_mode if edit_retailer else 'commission' }}">
                     {% endif %}
-                </select>
-            </label>
-            <label>
-                <span>الدرجة</span>
-                <select name="class_number" required data-sale-field="class">
-                    {% if edit_retailer %}
-                        <option value="{{ edit_retailer.class_number }}" selected>{{ edit_retailer.class_number }}</option>
-                    {% else %}
-                        <option value="" selected>اختر الدرجة</option>
-                    {% endif %}
-                </select>
-            </label>
-            <label>
-                <span>كجم/وحدة</span>
-                <select name="kilograms_per_unit" required data-sale-field="kilograms">
-                    {% if edit_retailer %}
-                        <option value="{{ edit_retailer.kilograms_per_unit }}" selected>{{ '%.2f'|format(edit_retailer.kilograms_per_unit) }}</option>
-                    {% else %}
-                        <option value="" selected>اختر الوزن</option>
-                    {% endif %}
-                </select>
-            </label>
-            <label>
-                <span>عدد الوحدات</span>
-                <input type="number" min="1" name="units_count" value="{{ edit_retailer.units_count if edit_retailer else '' }}" required>
-            </label>
-            <div class="info-box price-display-box">
-                <strong>سعر الوحدة من المورد</strong>
-                <span data-sale-price-display>{{ edit_retailer.original_price_per_unit|currency if edit_retailer else "يتم جلبه تلقائياً من بيانات المورد عند الحفظ" }}</span>
-            </div>
-            {% if is_admin %}
-                <label>
-                    <span>الخصم للوحدة</span>
-                    <input type="number" min="0" step="0.01" name="discount_per_unit" value="{{ edit_retailer.discount_per_unit if edit_retailer else 0 }}" required>
+                    <div class="info-box field-span-full">
+                        تجار الآجل تُضاف عليهم العمولة والمصروف الإداري تلقائياً من إعدادات النظام.
+                    </div>
+                </div>
+                <label class="notes-field">
+                    <span>ملاحظات</span>
+                    <textarea name="notes" rows="3">{{ edit_retailer.notes if edit_retailer else '' }}</textarea>
                 </label>
-                <label>
-                    <span>نوع تأثير الخصم</span>
-                    <select name="discount_mode">
-                        {% set current_discount_mode = edit_retailer.discount_mode if edit_retailer else 'commission' %}
-                        <option value="commission" {{ 'selected' if current_discount_mode == 'commission' else '' }}>يخصم من العمولة</option>
-                        <option value="unit_price" {{ 'selected' if current_discount_mode == 'unit_price' else '' }}>يخصم من سعر الوحدة</option>
-                    </select>
-                </label>
-            {% else %}
-                <input type="hidden" name="discount_per_unit" value="0">
-                <input type="hidden" name="discount_mode" value="{{ edit_retailer.discount_mode if edit_retailer else 'commission' }}">
-            {% endif %}
-            <div class="info-box">
-                تجار الآجل تُضاف عليهم العمولة والمصروف الإداري تلقائياً من إعدادات النظام.
             </div>
-            <label class="full-width">
-                <span>ملاحظات</span>
-                <textarea name="notes" rows="3">{{ edit_retailer.notes if edit_retailer else '' }}</textarea>
-            </label>
             <div class="form-actions full-width">
                 <button class="btn btn-primary" type="submit">{{ "حفظ التعديل" if edit_retailer else "إضافة الحركة" }}</button>
                 {% if edit_retailer %}
@@ -147,6 +151,11 @@
                                 </span>
                             </td>
                             <td class="actions-cell">
+                                {% if item.notes %}
+                                    <button class="btn btn-small btn-ghost" type="button" data-open-dialog="special-retailer-notes-{{ item.id }}">
+                                        الملاحظات
+                                    </button>
+                                {% endif %}
                                 <a class="btn btn-small btn-secondary" href="{{ url_for('payments.payments', retailer=item.id) }}">دفعة</a>
                                 <a class="btn btn-small btn-ghost" href="{{ url_for('special_retailers.special_retailer_receipt', retailer_id=item.id) }}">معاينة</a>
                                 {% if is_admin %}
@@ -154,6 +163,22 @@
                                     <form method="post" action="{{ url_for('special_retailers.delete_special_retailer', retailer_id=item.id) }}">
                                         <button class="btn btn-small btn-danger" type="submit" data-confirm="هل تريد حذف حركة الآجل؟">حذف</button>
                                     </form>
+                                {% endif %}
+                                {% if item.notes %}
+                                    <dialog class="action-dialog" id="special-retailer-notes-{{ item.id }}" data-action-dialog>
+                                        <div class="action-dialog-card">
+                                            <div class="action-dialog-head">
+                                                <div>
+                                                    <strong>ملاحظات تاجر الآجل</strong>
+                                                    <span>{{ item.retailer_name }} | {{ item.date|date_ar }}</span>
+                                                </div>
+                                                <button class="btn btn-small btn-ghost" type="button" data-close-dialog>إغلاق</button>
+                                            </div>
+                                            <div class="action-dialog-body">
+                                                <div class="note-dialog-text">{{ item.notes }}</div>
+                                            </div>
+                                        </div>
+                                    </dialog>
                                 {% endif %}
                             </td>
                         </tr>
